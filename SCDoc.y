@@ -75,11 +75,22 @@ char *striptrailingws(char *s) {
 
 %}
 
-%token CLASS TITLE SUMMARY RELATED CATEGORIES
-%token DESCRIPTION CLASSMETHODS INSTANCEMETHODS EXAMPLES SECTION SUBSECTION METHOD ARGUMENT
-%token CODE LINK IMAGE TELETYPE MATH STRONG EMPHASIS
-%token NOTE WARNING LIST TABLE
-%token WHITESPACES EOL EMPTYLINES TEXT TAGSYM BARS
+// single line header tags that take text
+%token CLASS TITLE SUMMARY RELATED CATEGORIES REDIRECT
+// single line body tags that take text
+%token CLASSTREE COPYMETHOD KEYWORD PRIVATE
+// single line structural tags that take text, with children
+%token SECTION SUBSECTION METHOD ARGUMENT
+// single line structural tags with no text, with children
+%token DESCRIPTION CLASSMETHODS INSTANCEMETHODS EXAMPLES RETURNS DISCUSSION
+// nestable range tags with no text, with children
+%token LIST TREE NUMBEREDLIST DEFINITIONLIST TABLE FOOTNOTE NOTE WARNING
+// modal range tags that take multi-line text
+%token CODE LINK ANCHOR SOFT IMAGE TELETYPE MATH STRONG EMPHASIS
+// symbols
+%token TAGSYM BARS HASHES
+// text and whitespace
+%token TEXT WHITESPACES EOL EMPTYLINES
 
 %start document
 

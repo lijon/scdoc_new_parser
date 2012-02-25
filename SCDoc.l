@@ -5,42 +5,67 @@
 #define YYSTYPE char *
 #include "SCDoc.tab.h"
 
-/*
-[a-zA-Z]+       { yylval = strdup(yytext); printf("WORD:'%s'\n",yylval); return WORD; }
-*/
-
 %}
-
 
 %%
 
 [ \t\r]+  {
     yylval = strdup(yytext);
-    printf("-- WHITESPACE:'%s'\n",yylval);
     return WHITESPACES;
 }
 
-class::         printf("-- CLASS\n"); return CLASS;
-title::         printf("-- TITLE\n"); return TITLE;
-summary::       printf("-- SUMMARY\n"); return SUMMARY;
+class::         return CLASS;
+title::         return TITLE;
+summary::       return SUMMARY;
+related::       return RELATED;
+categories::    return CATEGORIES;
+redirect::      return REDIRECT;
 
-code::          printf("-- CODE\n"); return CODE;
-note::          printf("-- NOTE\n"); return NOTE;
+classtree::     return CLASSTREE;
+copymethod::    return COPYMETHOD;
+keyword::       return KEYWORD;
+private::       return PRIVATE;
 
-section::       printf("-- SECTION\n"); return SECTION;
-subsection::    printf("-- SUBSECTION\n"); return SUBSECTION;
-method::        printf("-- METHOD\n"); return METHOD;
-argument::      printf("-- ARGUMENT\n"); return ARGUMENT;
+section::       return SECTION;
+subsection::    return SUBSECTION;
+method::        return METHOD;
+argument::      return ARGUMENT;
 
-::              printf("-- TAGSYM\n"); return TAGSYM;
+description::   return DESCRIPTION;
+classmethods::  return CLASSMETHODS;
+instancemethods:: return INSTANCEMETHODS;
+examples::      return EXAMPLES;
+returns::       return RETURNS;
+discussion::    return DISCUSSION;
 
+list::          return LIST;
+tree::          return TREE;
+numberedlist::  return NUMBEREDLIST;
+definitionlist:: return DEFINITIONLIST;
+table::         return TABLE;
+footnote::      return FOOTNOTE;
+warning::       return WARNING;
+note::          return NOTE;
+
+link::          return LINK;
+anchor::        return ANCHOR;
+soft::          return SOFT;
+image::         return IMAGE;
+teletype::      return TELETYPE;
+math::          return MATH;
+strong::        return STRONG;
+emphasis::      return EMPHASIS;
+code::          return CODE;
+
+::              return TAGSYM;
 \|\|            return BARS;
+"##"            printf("HASHES\n"); return HASHES;
 
-\n              printf("-- EOL\n"); return EOL;
-\n\n+           printf("-- EMPTYLINES\n"); return EMPTYLINES;
+\n              return EOL;
+\n\n+           return EMPTYLINES;
 
 :               |
 \\::            |
-[^:\\\n\t\r ]+    yylval = strdup(yytext); printf("-- TEXT:'%s'\n",yylval); return TEXT;
+[^:\\\n\t\r ]+    yylval = strdup(yytext); return TEXT;
 
 %%
