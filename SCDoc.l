@@ -59,13 +59,13 @@ code::          return CODE;
 
 ::              return TAGSYM;
 \|\|            return BARS;
-"##"            printf("HASHES\n"); return HASHES;
+\#\#            return HASHES;
 
 \n              return EOL;
 \n\n+           return EMPTYLINES;
 
 :               |
 \\::            |
-[^:\\\n\t\r ]+    yylval = strdup(yytext); return TEXT;
+[^:\\\n\t\r ]+    yylval = strdup(yytext); printf("-- %s\n",yytext); return TEXT;
 
 %%

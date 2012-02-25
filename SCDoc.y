@@ -28,11 +28,6 @@ perhaps better to just match EOL2 as a paragraph separator?
 is it possible to make a similar rule that strips trailing whitespace?
 if not, get rid of words2 and just use a function to strip ws before putting it into the syntax tree.
 
-should the structure (section levels) be part of the syntax (and syntax tree) or generated
-when we convert syntax tree to document tree?
-that is, body is list of sections, which is a list of subsections, etc?
-it also means we could make sure argument:: only happens inside method::, etc..
-
 could we make classmethods:: etc usable only if the doc started with class:: ?
 or should we deprecate class:: and just use title::?
 */
@@ -119,36 +114,61 @@ headtag: CLASS { $$ = "CLASS"; }
        | SUMMARY { $$ = "SUMMARY"; }
        | RELATED { $$ = "RELATED"; }
        | CATEGORIES { $$ = "CATEGORIES"; }
+       | REDIRECT { $$ = "REDIRECT"; }
        ;
 
-sections: sections section { $$ = strmerge($1,$2); }
-        | section { $$ = $1; }
-        ;
-
-sectiontag: SECTION
-          | CLASSMETHODS
+sectiontag: CLASSMETHODS
           | INSTANCEMETHODS
           | DESCRIPTION
           | EXAMPLES
           ;
-
-section: sectiontag words2 eol subsections { $$ = $4; printf("SECTION:%s\n",$2); }
+sections: sections section { $$ = strmerge($1,$2); }
+        | section { $$ = $1; }
+        ;
+section: SECTION words2 eol optsubsections { $$ = $4; printf("SECTION:%s\n",$2); }
+       | sectiontag eol optsubsections { printf("FIXED SECTION\n"); }
        ;
 
+optsubsections: subsections
+              |
+              ;
 subsections: subsections subsection { $$ = strmerge($1,$2); }
            | subsection { $$ = $1; }
            | subsubsections { $$ = $1; }
            ;
 
-subsection: SUBSECTION words2 eol subsubsections { $$ = $4; printf("SUBSECTION:%s\n",$2); }
+subsection: SUBSECTION words2 eol optsubsubsections { $$ = $4; printf("SUBSECTION:%s\n",$2); }
           ;
 
+optsubsubsections: subsubsections
+                 |
+                 ;
 subsubsections: subsubsections subsubsection { $$ = strmerge($1,$2); }
               | subsubsection { $$ = $1; }
               | body  { $$ = $1; }
               ; 
 
-subsubsection: METHOD words2 eol body { $$ = $4; printf("METHOD:%s\n",$2); }
+subsubsection: METHOD words2 eol methodbody { $$ = $4; printf("METHOD:%s\n",$2); }
+             ;
+
+methodbody: optbody optargs optreturns optdiscussion
+          ;
+optbody: body
+       |
+       ;
+optargs: args
+       |
+       ;
+args: args arg
+    | arg
+    ;
+arg: ARGUMENT words2 eol body { printf("ARGUMENT:%s\n",$2); }
+   ;
+optreturns: RETURNS body { printf("RETURNS:%s\n",$2); }
+          |
+          ;
+optdiscussion: DISCUSSION body { printf("DISCUSSION:%s\n",$2); }
+             |
              ;
 
 body: body bodyelem { $$ = strmerge($1,$2); }
@@ -156,9 +176,38 @@ body: body bodyelem { $$ = strmerge($1,$2); }
     ;
 
 bodyelem: rangetag body TAGSYM { printf("RANGETAG: %s '%s'\n",$1,$2); $$ = $2; }
+        | listtag eatws listbody TAGSYM { printf("LISTTAG: %s '%s'\n",$1,$2); $$ = $2; }
+        | tabletag eatws tablebody TAGSYM { printf("TABLETAG: %s '%s'\n",$1,$2); $$ = $2; }
         | modaltag wordsnl TAGSYM { printf("MODALTAG: %s '%s'\n",$1,$2); $$ = $2; }
+        | singletag words2 eol { printf("SINGLETAG: %s '%s'\n",$1,$2); $$ = $2; }
         | anywordnl { $$ = $1; }
         ;
+
+eatws: eatws anyws
+     | anyws
+     ;
+
+listbody: listbody HASHES body
+        | HASHES body
+        ;
+
+tablebody: tablebody HASHES body optcells
+        | HASHES body optcells
+        ;
+
+optcells: tablecells
+        |
+        ;
+
+tablecells: tablecells BARS body
+         | BARS body
+         ;
+
+singletag: CLASSTREE
+         | COPYMETHOD
+         | KEYWORD
+         | PRIVATE
+         ;
 
 modaltag: CODE { $$ = "CODE"; }
         | LINK { $$ = "LINK"; }
@@ -166,14 +215,29 @@ modaltag: CODE { $$ = "CODE"; }
         | TELETYPE { $$ = "TELETYPE"; }
         | MATH { $$ = "MATH"; }
         | STRONG { $$ = "STRONG"; }
+        | SOFT { $$ = "SOFT"; }
+        | ANCHOR { $$ = "ANCHOR"; }
         | EMPHASIS { $$ = "EMPHASIS"; }
         ;
 
-rangetag: NOTE { $$ = "NOTE" }
-        | WARNING { $$ = "WARNING" }
-        | LIST { $$ = "LIST" }
-        | TABLE { $$ = "TABLE" }
+listtag: LIST
+       | TREE
+       | NUMBEREDLIST
+       ;
+       
+tabletag: DEFINITIONLIST
+       | TABLE
+       ;
+
+rangetag: FOOTNOTE
+        | WARNING
+        | NOTE
         ;
+
+
+anyws: WHITESPACES
+     | eol
+     ;
 
 anyword: TEXT { $$ = $1; }
        | WHITESPACES { $$ = $1; }
