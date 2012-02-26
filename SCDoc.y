@@ -9,13 +9,6 @@
 /*
 TODO:
 
-would it be possibe to make newline separated paragraphs part of the grammar?
-that is, have a rule that ends with EOL EOL or EOL $end
-the idea was that docbody consists of a list of paragraphs, and a paragraph consists
-of a list of body elements. But, the bodyelements should be able to contain paragraphs too!
-(for example, multiple paragraphs inside a section, or inside a note::, etc..
-perhaps better to just match EOL2 as a paragraph separator?
-
 "optws words2" strips heading whitespace.
 is it possible to make a similar rule that strips trailing whitespace?
 if not, get rid of words2 and just use a function to strip ws before putting it into the syntax tree.
@@ -187,7 +180,7 @@ void node_dump(Node *n, int level, int last) {
 %token <i> EOL EMPTYLINES
 
 %type <i> eol
-%type <id> headtag sectiontag singletag listtag modaltag rangetag tabletag
+%type <id> headtag sectiontag singletag listtag modaltag modaltag_oneline rangetag tabletag
 %type <str> words2 anyword words anywordnl wordsnl
 %type <node> arg optreturns optdiscussion body bodyelem 
 %type <node> optsubsections optsubsubsections methodbody  
@@ -315,6 +308,7 @@ bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | listtag eatws listbody TAGSYM { $$ = node_make_take_children($1,NULL,$3); }
         | tabletag eatws tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$3); }
         | modaltag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); /*FIXME: detect block display: if it starts with eol */}
+        | modaltag_oneline words TAGSYM { $$ = node_make($1,$2,NULL); /*FIXME: detect block display: if it starts with eol */}
         | singletag words2 eol { $$ = node_make($1,$2,NULL); }
 /*        | wordsnl2 { $$ = node_make("TEXT",$1,NULL); } // FIXME: 3 shift/reduce conflicts, but merges words and lines
         | EMPTYLINES { $$ = node_create("PARBREAK"); } // for wordsnl2
@@ -359,15 +353,18 @@ singletag: CLASSTREE { $$ = "CLASSTREE"; }
 ;
 
 modaltag: CODE { $$ = "CODE"; }
-        | LINK { $$ = "LINK"; }
-        | IMAGE { $$ = "IMAGE"; }
-        | TELETYPE { $$ = "TELETYPE"; }
-        | MATH { $$ = "MATH"; }
-        | STRONG { $$ = "STRONG"; }
-        | SOFT { $$ = "SOFT"; }
-        | ANCHOR { $$ = "ANCHOR"; }
-        | EMPHASIS { $$ = "EMPHASIS"; }
+          | TELETYPE { $$ = "TELETYPE"; }
+          | MATH { $$ = "MATH"; }
+          | STRONG { $$ = "STRONG"; }
+          | SOFT { $$ = "SOFT"; }
+          | EMPHASIS { $$ = "EMPHASIS"; }
 ;
+
+modaltag_oneline: LINK { $$ = "LINK"; }
+                | IMAGE { $$ = "IMAGE"; }
+                | ANCHOR { $$ = "ANCHOR"; }
+;
+
 
 listtag: LIST { $$ = "LIST"; }
        | TREE { $$ = "TREE"; }
