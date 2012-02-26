@@ -4,10 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include "SCDoc.h"
 
-#define YYERROR_VERBOSE
+//#define YYERROR_VERBOSE
 
-#define YYSTYPE char *
+//#define YYSTYPE char *
 
 /*
 TODO:
@@ -34,12 +35,12 @@ or should we deprecate class:: and just use title::?
 
 extern int yyparse();
 extern int yylex();
-
-int sectionlevel;
-
+//int yylex ( YYSTYPE * lvalp, YYLTYPE * llocp);
+extern int yylineno;
+extern char *yytext;
 void yyerror(const char *str)
 {
-    fprintf(stderr, "error: %s\n",str);
+    fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,yylineno,yytext);
 }
 
 int yywrap()
@@ -49,7 +50,6 @@ int yywrap()
 
 int main()
 {
-    sectionlevel = 0;
     yyparse();
 }
 
@@ -57,6 +57,14 @@ char *strmerge(char *a, char *b) {
     char *s = (char *)malloc(strlen(a)+strlen(b)+1);
     strcpy(s,a);
     strcat(s,b);
+    return s;
+}
+
+// merge strings and free the old ones
+char *strmergefree(char *a, char *b) {
+    char *s = strmerge(a,b);
+    free(a);
+    free(b);
     return s;
 }
 
@@ -68,8 +76,63 @@ char *striptrailingws(char *s) {
     return s;
 }
 
-%}
+Node * node_create(const char *id) {
+    Node *n = (Node *)malloc(sizeof(Node));
+    n->id = id;
+    n->text = NULL;
+    n->n_childs = 0;
+    n->children = NULL;
+    return n;
+}
 
+// takes ownership of child
+Node * node_add_child(Node *n, Node *child) {
+    if(child) {
+        n->children = (Node **)realloc(n->children, (n->n_childs+1) * sizeof(Node*));
+        n->children[n->n_childs] = child;
+        n->n_childs++;
+    }
+    return n;
+}
+
+// takes ownership of text
+Node * node_add_text(Node *n, char *text) {
+    if(n->text) {
+        char *str = strmergefree(n->text,text);
+        n->text = str;
+    } else {
+        n->text = text;
+    }
+    return n;
+}
+
+Node * node_make(const char *id, char *text, Node *child) {
+    Node *n = node_create(id);
+    node_add_text(n, text);
+    node_add_child(n, child);
+    return n;
+}
+
+void node_dump(Node *n, int level) {
+    int i = level;
+    while(i--) printf("  ");
+    printf("%s",n->id);
+    if(n->text) printf(" \"%s\"",n->text);
+//    printf(" (%d)\n",n->n_childs);
+    printf("\n");
+    for(i = 0; i < n->n_childs; i++) {
+        node_dump(n->children[i], level+1);
+    }
+}
+
+%}
+%locations
+%error-verbose
+%union {
+    const char *id;
+    char *str;
+    Node *node;
+}
 // single line header tags that take text
 %token CLASS TITLE SUMMARY RELATED CATEGORIES REDIRECT
 // single line body tags that take text
@@ -85,29 +148,54 @@ char *striptrailingws(char *s) {
 // symbols
 %token TAGSYM BARS HASHES
 // text and whitespace
-%token TEXT WHITESPACES EOL EMPTYLINES
+%token <str> TEXT WHITESPACES
+%token EOL EMPTYLINES
+
+%type <id> headtag sectiontag singletag listtag modaltag rangetag tabletag
+%type <str> words2 anyword words anywordnl wordsnl
+%type <node> arg optreturns optdiscussion body bodyelem 
+%type <node> optsubsections optsubsubsections methodbody  
+%type <node> dochead headline optsections sections section
+%type <node> subsections subsection subsubsection subsubsections
+%type <node> optbody optargs args listbody tablebody optcells tablecells
 
 %start document
 
 %%
 
-document: dochead sections
-        ;
+document: dochead optsections
+    {
+        Node *n = node_create("ROOT");
+        node_add_child(n, $1);
+        node_add_child(n, $2);
+        node_dump(n,0);
+    }
+;
 
-dochead: dochead headline
-       | headline
-       ;
+optsections: sections
+           | { $$ = NULL; }
+;
 
-headline: headtag words2 eol { printf("HEADERLINE: %s '%s'\n",$1,striptrailingws($2)); }
-        ;
+dochead: dochead headline { $$ = node_add_child($1,$2); }
+       | headline { $$ = node_make("HEADER",NULL,$1); }
+;
+
+headline: headtag words eol
+    {
+        $$ = node_make($1,striptrailingws($2),NULL);
+    }
+;
 
 optws:
-     | WHITESPACES
-     ;
+     | WHITESPACES { free($1); }
+;
 
 words2: optws TEXT { $$ = $2; }
-      | optws TEXT words { $$ = strmerge($2, $3); }
-      ;
+      | optws TEXT words
+      {
+          $$ = strmergefree($2, $3);
+      }
+;
 
 headtag: CLASS { $$ = "CLASS"; }
        | TITLE { $$ = "TITLE"; }
@@ -115,98 +203,130 @@ headtag: CLASS { $$ = "CLASS"; }
        | RELATED { $$ = "RELATED"; }
        | CATEGORIES { $$ = "CATEGORIES"; }
        | REDIRECT { $$ = "REDIRECT"; }
-       ;
+;
 
-sectiontag: CLASSMETHODS
-          | INSTANCEMETHODS
-          | DESCRIPTION
-          | EXAMPLES
-          ;
-sections: sections section { $$ = strmerge($1,$2); }
-        | section { $$ = $1; }
-        ;
-section: SECTION words2 eol optsubsections { $$ = $4; printf("SECTION:%s\n",$2); }
-       | sectiontag eol optsubsections { printf("FIXED SECTION\n"); }
-       ;
+sectiontag: CLASSMETHODS { $$ = "CLASSMETHODS"; }
+          | INSTANCEMETHODS { $$ = "INSTANCEMETHODS"; }
+          | DESCRIPTION { $$ = "DESCRIPTION"; }
+          | EXAMPLES { $$ = "EXAMPLES"; }
+;
+
+sections: sections section { $$ = node_add_child($1,$2); }
+        | section { $$ = node_make("BODY",NULL,$1); }
+;
+
+section: SECTION words2 eol optsubsections
+    {
+        $$ = node_make("SECTION",$2,$4);
+    }
+       | sectiontag eol optsubsections
+    {
+        $$ = node_make($1, NULL, $3);
+    }
+;
 
 optsubsections: subsections
-              |
-              ;
-subsections: subsections subsection { $$ = strmerge($1,$2); }
-           | subsection { $$ = $1; }
-           | subsubsections { $$ = $1; }
-           ;
+              | { $$ = NULL; }
+;
 
-subsection: SUBSECTION words2 eol optsubsubsections { $$ = $4; printf("SUBSECTION:%s\n",$2); }
-          ;
+subsections: subsections subsection { $$ = node_add_child($1,$2); }
+           | subsection { $$ = node_make(NULL,NULL,$1); }
+           | subsubsections { $$ = node_make(NULL,NULL,$1); }
+;
+
+subsection: SUBSECTION words2 eol optsubsubsections
+    {
+        $$ = node_make("SUBSECTION", $2, $4);
+    }
+;
 
 optsubsubsections: subsubsections
-                 |
-                 ;
-subsubsections: subsubsections subsubsection { $$ = strmerge($1,$2); }
-              | subsubsection { $$ = $1; }
-              | body  { $$ = $1; }
-              ; 
+                 | { $$ = NULL; }
+;
 
-subsubsection: METHOD words2 eol methodbody { $$ = $4; printf("METHOD:%s\n",$2); }
-             ;
+subsubsections: subsubsections subsubsection { $$ = node_add_child($1,$2); }
+              | subsubsection { $$ = node_make(NULL,NULL,$1); }
+              | body { $$ = node_make(NULL,NULL,$1); }
+; 
+
+subsubsection: METHOD words2 eol methodbody
+    {
+        $$ = node_make("METHOD",$2,$4);
+    }
+;
 
 methodbody: optbody optargs optreturns optdiscussion
-          ;
+    {
+        $$ = node_create(NULL); //METHODBODY
+        node_add_child($$, $1);
+        node_add_child($$, $2);
+        node_add_child($$, $3);
+        node_add_child($$, $4);
+    }
+;
+
 optbody: body
-       |
-       ;
+       | { $$ = NULL; }
+;
+
 optargs: args
-       |
-       ;
-args: args arg
-    | arg
-    ;
-arg: ARGUMENT words2 eol body { printf("ARGUMENT:%s\n",$2); }
-   ;
-optreturns: RETURNS body { printf("RETURNS:%s\n",$2); }
-          |
-          ;
-optdiscussion: DISCUSSION body { printf("DISCUSSION:%s\n",$2); }
-             |
-             ;
+       | { $$ = NULL; }
+;
 
-body: body bodyelem { $$ = strmerge($1,$2); }
-    | bodyelem { $$ = $1; }
+args: args arg { $$ = node_add_child($1,$2); }
+    | arg { $$ = node_make(NULL,NULL,$1); }
+;
+
+arg: ARGUMENT words2 eol body
+    {
+        $$ = node_make("ARGUMENT", $2, $4);
+    }
+;
+
+optreturns: RETURNS body { $$ = node_make("RETURNS",NULL,$2); }
+          | { $$ = NULL; }
+;
+
+optdiscussion: DISCUSSION body { $$ = node_make("DISCUSSION",NULL,$2); }
+             | { $$ = NULL; }
+;
+
+body: body bodyelem { $$ = node_add_child($1,$2); }
+    | bodyelem { $$ = node_make(NULL,NULL,$1); }
     ;
 
-bodyelem: rangetag body TAGSYM { printf("RANGETAG: %s '%s'\n",$1,$2); $$ = $2; }
-        | listtag eatws listbody TAGSYM { printf("LISTTAG: %s '%s'\n",$1,$2); $$ = $2; }
-        | tabletag eatws tablebody TAGSYM { printf("TABLETAG: %s '%s'\n",$1,$2); $$ = $2; }
-        | modaltag wordsnl TAGSYM { printf("MODALTAG: %s '%s'\n",$1,$2); $$ = $2; }
-        | singletag words2 eol { printf("SINGLETAG: %s '%s'\n",$1,$2); $$ = $2; }
-        | anywordnl { $$ = $1; }
+bodyelem: rangetag body TAGSYM { $$ = node_make($1,NULL,$2); }
+        | listtag eatws listbody TAGSYM { $$ = node_make($1,NULL,$3); }
+        | tabletag eatws tablebody TAGSYM { $$ = node_make($1,NULL,$3); }
+        | modaltag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
+        | singletag words2 eol { $$ = node_make($1,$2,NULL); }
+        | anywordnl { $$ = node_make("TEXT",$1,NULL); }
         ;
 
 eatws: eatws anyws
      | anyws
      ;
 
-listbody: listbody HASHES body
-        | HASHES body
+listbody: listbody HASHES body { $$ = node_add_child($1, node_make("HASHES",NULL,$3)); }
+        | HASHES body { $$ = node_make(NULL,NULL, node_make("HASHES",NULL,$2)); }
         ;
 
-tablebody: tablebody HASHES body optcells
-        | HASHES body optcells
+tablebody: tablebody HASHES body optcells  { $$ = node_add_child($1, node_add_child(node_make("HASHES",NULL,$3),$4)); }
+        | HASHES body optcells { $$ = node_make(NULL,NULL, node_add_child(node_make("HASHES",NULL,$3),$3)); }
         ;
 
 optcells: tablecells
-        |
+        | { $$ = NULL; }
         ;
 
-tablecells: tablecells BARS body
-         | BARS body
+tablecells: tablecells BARS body { $$ = node_add_child($1, node_make("BARS",NULL,$3)); }
+         | BARS body { $$ = node_make(NULL,NULL, node_make("BARS",NULL,$2)); }
          ;
 
-singletag: CLASSTREE
-         | COPYMETHOD
-         | KEYWORD
-         | PRIVATE
+singletag: CLASSTREE { $$ = "CLASSTREE"; }
+         | COPYMETHOD { $$ = "COPYMETHOD"; }
+         | KEYWORD { $$ = "KEYWORD"; }
+         | PRIVATE { $$ = "PRIVATE"; }
          ;
 
 modaltag: CODE { $$ = "CODE"; }
@@ -220,42 +340,41 @@ modaltag: CODE { $$ = "CODE"; }
         | EMPHASIS { $$ = "EMPHASIS"; }
         ;
 
-listtag: LIST
-       | TREE
-       | NUMBEREDLIST
+listtag: LIST { $$ = "LIST"; }
+       | TREE { $$ = "TREE"; }
+       | NUMBEREDLIST { $$ = "NUMBEREDLIST"; }
        ;
        
-tabletag: DEFINITIONLIST
-       | TABLE
+tabletag: DEFINITIONLIST { $$ = "DEFINITIONLIST"; }
+       | TABLE { $$ = "TABLE"; }
        ;
 
-rangetag: FOOTNOTE
-        | WARNING
-        | NOTE
+rangetag: FOOTNOTE { $$ = "FOOTNOTE"; }
+        | WARNING { $$ = "WARNING"; }
+        | NOTE { $$ = "NOTE"; }
         ;
 
-
-anyws: WHITESPACES
+anyws: WHITESPACES { free($1); }
      | eol
      ;
 
-anyword: TEXT { $$ = $1; }
-       | WHITESPACES { $$ = $1; }
+anyword: TEXT
+       | WHITESPACES
        ;
 
-words: words anyword { $$ = strmerge($1,$2); }
-     | anyword { $$ = $1; }
+words: words anyword { $$ = strmergefree($1,$2); }
+     | anyword
      ;
 
-eol: EOL { $$ = "\n"; }
-   | EMPTYLINES { $$ = "\n-------\n"; }
+eol: EOL
+   | EMPTYLINES
    ;
 
-anywordnl: anyword { $$ = $1; }
-         | eol { $$ = $1; }
+anywordnl: anyword
+         | eol { $$ = strdup("\n"); }
          ;
 
-wordsnl: wordsnl anywordnl { $$ = strmerge($1,$2); }
-       | anywordnl { $$ = $1; }
+wordsnl: wordsnl anywordnl { $$ = strmergefree($1,$2); }
+       | anywordnl
        ;
 

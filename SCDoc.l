@@ -1,16 +1,20 @@
 %{
 
 
-#include <cstring>
-#define YYSTYPE char *
+#include <string.h>
+//#define YYSTYPE char *
+#include "SCDoc.h"
 #include "SCDoc.tab.h"
 
 %}
 
+%option yylineno
+  /* %option bison-locations */
+
 %%
 
 [ \t\r]+  {
-    yylval = strdup(yytext);
+    yylval.str = strdup(yytext);
     return WHITESPACES;
 }
 
@@ -66,6 +70,6 @@ code::          return CODE;
 
 :               |
 \\::            |
-[^:\\\n\t\r ]+    yylval = strdup(yytext); printf("-- %s\n",yytext); return TEXT;
+[^:\\\n\t\r ]+    yylval.str = strdup(yytext); return TEXT;
 
 %%
