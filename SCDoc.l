@@ -18,48 +18,48 @@
     return WHITESPACES;
 }
 
-class::         return CLASS;
-title::         return TITLE;
-summary::       return SUMMARY;
-related::       return RELATED;
-categories::    return CATEGORIES;
-redirect::      return REDIRECT;
+(?i:class::)         return CLASS;
+(?i:title::)         return TITLE;
+(?i:summary::)       return SUMMARY;
+(?i:related::)       return RELATED;
+(?i:categories::)    return CATEGORIES;
+(?i:redirect::)      return REDIRECT;
 
-classtree::     return CLASSTREE;
-copymethod::    return COPYMETHOD;
-keyword::       return KEYWORD;
-private::       return PRIVATE;
+(?i:classtree::)     return CLASSTREE;
+(?i:copymethod::)    return COPYMETHOD;
+(?i:keyword::)       return KEYWORD;
+(?i:private::)       return PRIVATE;
 
-section::       return SECTION;
-subsection::    return SUBSECTION;
-method::        return METHOD;
-argument::      return ARGUMENT;
+(?i:section::)       return SECTION;
+(?i:subsection::)    return SUBSECTION;
+(?i:method::)        return METHOD;
+(?i:argument::)      return ARGUMENT;
 
-description::   return DESCRIPTION;
-classmethods::  return CLASSMETHODS;
-instancemethods:: return INSTANCEMETHODS;
-examples::      return EXAMPLES;
-returns::       return RETURNS;
-discussion::    return DISCUSSION;
+(?i:description::)   return DESCRIPTION;
+(?i:classmethods::)  return CLASSMETHODS;
+(?i:instancemethods::) return INSTANCEMETHODS;
+(?i:examples::)      return EXAMPLES;
+(?i:returns::)       return RETURNS;
+(?i:discussion::)    return DISCUSSION;
 
-list::          return LIST;
-tree::          return TREE;
-numberedlist::  return NUMBEREDLIST;
-definitionlist:: return DEFINITIONLIST;
-table::         return TABLE;
-footnote::      return FOOTNOTE;
-warning::       return WARNING;
-note::          return NOTE;
+(?i:list::)          return LIST;
+(?i:tree::)          return TREE;
+(?i:numberedlist::)  return NUMBEREDLIST;
+(?i:definitionlist::) return DEFINITIONLIST;
+(?i:table::)         return TABLE;
+(?i:footnote::)      return FOOTNOTE;
+(?i:warning::)       return WARNING;
+(?i:note::)          return NOTE;
 
-link::          return LINK;
-anchor::        return ANCHOR;
-soft::          return SOFT;
-image::         return IMAGE;
-teletype::      return TELETYPE;
-math::          return MATH;
-strong::        return STRONG;
-emphasis::      return EMPHASIS;
-code::          return CODE;
+(?i:link::)          return LINK;
+(?i:anchor::)        return ANCHOR;
+(?i:soft::)          return SOFT;
+(?i:image::)         return IMAGE;
+(?i:teletype::)      return TELETYPE;
+(?i:math::)          return MATH;
+(?i:strong::)        return STRONG;
+(?i:emphasis::)      return EMPHASIS;
+(?i:code::)          return CODE;
 
 ::              return TAGSYM;
 \|\|            return BARS;
