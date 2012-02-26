@@ -2,17 +2,63 @@ title:: This is my title!
 summary:: And some summary..
 
 description::
-Yes box.
+
+link::foo::
+
+See link::bar:: for more info.
 
 section:: My section
 This is some prose..
+With two lines..
 
 And here's
-another paragraph.
+another paragraph
+of text with code:: inline :: code.
+code::
+some example block code
+on several lines
+::
+
+method:: foo
+
+my method
+
+argument:: one
+first arg code::cool:: yeah
+
+argument:: two
+second arg
+
+discussion::
+blah blah...
 
 section:: Another section
 
 subsection:: My subsection
+one
+
+subsection:: My subsection
+two
 
 Hello?
+
+note:: note ::
+
+examples::
+list::
+## 1
+and some more text..
+## 2
+    list::
+    ## 2.1
+    ## 2.2
+    ## 2.3
+    ::
+## 3
+::
+
+table::
+## 1 || link::2:: || 3
+## 4 || 5 || 6
+::
 
