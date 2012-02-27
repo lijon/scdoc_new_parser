@@ -22,12 +22,12 @@
 (?i:[ \t]*redirect::[ \t]*)      return REDIRECT;
 
 (?i:[ \t]*classtree::[ \t]*)     return CLASSTREE;
-(?i:[ \t]*copymethod::[ \t]*)    return COPYMETHOD;
 (?i:[ \t]*keyword::[ \t]*)       return KEYWORD;
-(?i:[ \t]*private::[ \t]*)       return PRIVATE;
 
+(?i:[ \t]*private::[ \t]*)       return PRIVATE;
 (?i:[ \t]*section::[ \t]*)       return SECTION;
 (?i:[ \t]*subsection::[ \t]*)    return SUBSECTION;
+(?i:[ \t]*copymethod::[ \t]*)    return COPYMETHOD;
 (?i:[ \t]*method::[ \t]*)        return METHOD;
 (?i:[ \t]*argument::[ \t]*)      return ARGUMENT;
 

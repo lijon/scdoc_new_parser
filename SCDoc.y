@@ -288,6 +288,8 @@ subsubsections: subsubsections subsubsection { $$ = node_add_child($1,$2); }
 ; 
 
 subsubsection: METHOD words eol methodbody { $$ = node_make_take_children("METHOD",$2,$4); }
+             | COPYMETHOD words eol { $$ = node_make("COPYMETHOD",$2,NULL); }
+             | PRIVATE words eol { $$ = node_make("PRIVATE",$2,NULL); }
 ;
 
 methodbody: optbody optargs optreturns optdiscussion
@@ -389,9 +391,7 @@ blocktag: CODEBLOCK { $$ = "CODEBLOCK"; }
 ;
 
 singletag: CLASSTREE { $$ = "CLASSTREE"; }
-         | COPYMETHOD { $$ = "COPYMETHOD"; }
          | KEYWORD { $$ = "KEYWORD"; }
-         | PRIVATE { $$ = "PRIVATE"; }
 ;
 
 

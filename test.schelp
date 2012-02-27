@@ -43,6 +43,13 @@ second arg
 
 discussion::
 blah blah...
+private:: prInit
+copymethod:: Classes/SinOsc *ar
+
+method:: zoo
+another method
+returns::
+An instance
 
 section:: Another section
 subsection:: My subsection1
@@ -74,4 +81,6 @@ table::
 ## 1 abc || link::2/3:: || 3
 ## 4 || 5 || a    b			c  strong::6 + 5::
 ::
+
+classtree:: FooBar
 
