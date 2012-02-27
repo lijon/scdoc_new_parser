@@ -17,6 +17,11 @@ merge TEXT nodes.
 replace node->children with a linked list (node->next and node->tail)?
 
 note: PROSE means insert <p>  (but maybe not in list items etc?)
+
+tags can not eat heading newlines since it conflicts with eol as end-token for single-line tags..
+this means we now sometimes get trailing NL nodes in prose blocks.. we could simply filter these out later?
+or is there a better solution?
+
 */
 
 extern int yyparse();
@@ -165,7 +170,7 @@ void node_dump(Node *n, int level, int last) {
 
 %type <i> eol
 %type <id> headtag sectiontag singletag listtag rangetag tabletag inlinetag blocktag
-%type <str> words2 anyword words anywordnl wordsnl
+%type <str> anyword words anywordnl wordsnl
 %type <node> arg optreturns optdiscussion body bodyelem 
 %type <node> optsubsections optsubsubsections methodbody  
 %type <node> dochead headline optsections sections section
@@ -192,11 +197,9 @@ dochead: dochead headline { $$ = node_add_child($1,$2); }
        | headline { $$ = node_make("HEADER",NULL,$1); }
 ;
 
-headline: headtag words2 eol { $$ = node_make($1,striptrailingws($2),NULL); }
+headline: headtag words eol { $$ = node_make($1,striptrailingws($2),NULL); }
 ;
 
-words2: words
-      ;
 /*optws:
      | WHITESPACES { free($1); }
 ;
@@ -229,7 +232,7 @@ sections: sections section { $$ = node_add_child($1,$2); }
         | subsections /* allow text before first section */
 ;
 
-section: SECTION words2 eol optsubsections { $$ = node_make_take_children("SECTION",$2,$4); }
+section: SECTION words eol optsubsections { $$ = node_make_take_children("SECTION",$2,$4); }
        | sectiontag optsubsections { $$ = node_make_take_children($1, NULL,$2); }
 ;
 
@@ -242,7 +245,7 @@ subsections: subsections subsection { $$ = node_add_child($1,$2); }
            | subsubsections
 ;
 
-subsection: SUBSECTION words2 eol optsubsubsections { $$ = node_make_take_children("SUBSECTION", $2, $4); }
+subsection: SUBSECTION words eol optsubsubsections { $$ = node_make_take_children("SUBSECTION", $2, $4); }
 ;
 
 optsubsubsections: subsubsections
@@ -254,7 +257,7 @@ subsubsections: subsubsections subsubsection { $$ = node_add_child($1,$2); }
               | body { $$ = node_make_take_children("(SUBSUBSECTIONS)",NULL,$1); }
 ; 
 
-subsubsection: METHOD words2 eol methodbody { $$ = node_make_take_children("METHOD",$2,$4); }
+subsubsection: METHOD words eol methodbody { $$ = node_make_take_children("METHOD",$2,$4); }
 ;
 
 methodbody: optbody optargs optreturns optdiscussion
@@ -278,7 +281,7 @@ args: args arg { $$ = node_add_child($1,$2); }
     | arg { $$ = node_make("ARGUMENTS",NULL,$1); }
 ;
 
-arg: ARGUMENT words2 eol body { $$ = node_make_take_children("ARGUMENT", $2, $4); }
+arg: ARGUMENT words eol body { $$ = node_make_take_children("ARGUMENT", $2, $4); }
 ;
 
 optreturns: RETURNS body { $$ = node_make_take_children("RETURNS",NULL,$2); }
@@ -315,7 +318,7 @@ bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | listtag listbody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | tabletag tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
-        | singletag words2 eol { $$ = node_make($1,$2,NULL); }
+        | singletag words eol { $$ = node_make($1,$2,NULL); }
         | EMPTYLINES { $$ = NULL; }
         | IMAGE words TAGSYM { $$ = node_make("IMAGE",$2,NULL); }
         ;

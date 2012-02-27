@@ -26,9 +26,13 @@ list::
 ::
 
 classmethods::
+
+private:: bar
+
     method:: foo
 
 my method
+
 argument:: one
 first arg code::cool:: yeah
 
