@@ -1,9 +1,6 @@
 title:: This is my title! 
 summary:: And some summary..
 
-subsection:: 123
-this should not be allowed
-
 method:: test
 hmm
 

@@ -263,7 +263,7 @@ optsections: sections
 
 sections: sections section { $$ = node_add_child($1,$2); }
         | section { $$ = node_make("BODY",NULL,$1); }
-        | subsections /* allow text before first section */
+        | subsubsections { $$ = node_make_take_children("BODY",NULL,$1); } /* allow text before first section */
 ;
 
 section: SECTION { method_type = "METHOD"; } words eol optsubsections { $$ = node_make_take_children("SECTION",$3,$5); }
