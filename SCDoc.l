@@ -1,15 +1,12 @@
 %{
 
-
 #include <string.h>
-//#define YYSTYPE char *
 #include "SCDoc.h"
 #include "SCDoc.tab.h"
 
 %}
 
-%option yylineno
-  /* %option bison-locations */
+%option yylineno noyywrap never-interactive nounistd
 
 %x verbatim
 %%
@@ -69,17 +66,17 @@
 \n              return EOL;
 \n\n+           return EMPTYLINES;
 
-\\\|\|          yylval.str = strdup("||"); return TEXT;
-\\\#\#          yylval.str = strdup("##"); return TEXT;
-<*>\\::         yylval.str = strdup("::"); return TEXT;
-<verbatim>\t    yylval.str = strdup("    "); return TEXT;
-[ \r\t]+        yylval.str = strdup(" "); return TEXT;
+\\\|\|          scdoclval.str = strdup("||"); return TEXT;
+\\\#\#          scdoclval.str = strdup("##"); return TEXT;
+<*>\\::         scdoclval.str = strdup("::"); return TEXT;
+<verbatim>\t    scdoclval.str = strdup("    "); return TEXT;
+[ \r\t]+        scdoclval.str = strdup(" "); return TEXT;
 
 [a-zA-Z]+       |
 <*>[.,!?(){}\[\]'"0-9]+ |
 <verbatim>[^:\\\t ]+ |
 [^:\\\n]        |
-<*>.            yylval.str = strdup(yytext); return TEXT;
+<*>.            scdoclval.str = strdup(scdoctext); return TEXT;
 
 %%
 

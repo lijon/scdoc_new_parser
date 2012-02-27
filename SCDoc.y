@@ -18,27 +18,22 @@ note: PROSE means insert <p>  (but maybe not in list items etc?)
 
 */
 
-extern int yyparse();
-extern int yylex();
-extern int yylineno;
-extern char *yytext;
+int scdocparse();
+int scdoclex();
+extern int scdoclineno;
+extern char *scdoctext;
 
 static const char * method_type = NULL;
 
-void yyerror(const char *str)
+void scdocerror(const char *str)
 {
-    fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,yylineno,yytext);
-}
-
-int yywrap()
-{
-    return 1;
+    fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,scdoctext);
 }
 
 int main()
 {
     method_type = "METHOD";
-    yyparse();
+    scdocparse();
 }
 
 // merge a+b and free b

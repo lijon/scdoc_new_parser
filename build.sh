@@ -1,3 +1,3 @@
 #!/bin/sh
-flex SCDoc.l && bison --defines -v SCDoc.y && g++ -g -o parser *.c -ll
+flex -P scdoc SCDoc.l && bison -p scdoc --defines SCDoc.y && g++ -g -o parser lex.scdoc.c SCDoc.tab.c -ll
 
