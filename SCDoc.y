@@ -26,7 +26,8 @@ handle inline/block display (CODE, MATH, PROSE, more?)
 
 replace strmerge with a linked list string struct
 
-replace node->children with a linked list (node->next and node->tail)
+replace node->children with a linked list (node->next and node->tail)?
+
 */
 
 extern int yyparse();
@@ -238,6 +239,7 @@ optsections: sections
 
 sections: sections section { $$ = node_add_child($1,$2); }
         | section { $$ = node_make("BODY",NULL,$1); }
+        | subsections /* allow text before first section */
 ;
 
 section: SECTION words2 eol optsubsections { $$ = node_make_take_children("SECTION",$2,$4); }
