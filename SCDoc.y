@@ -22,6 +22,9 @@ extern int yyparse();
 extern int yylex();
 extern int yylineno;
 extern char *yytext;
+
+static const char * method_type = NULL;
+
 void yyerror(const char *str)
 {
     fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,yylineno,yytext);
@@ -34,6 +37,7 @@ int yywrap()
 
 int main()
 {
+    method_type = "METHOD";
     yyparse();
 }
 
@@ -247,10 +251,10 @@ headtag: CLASS { $$ = "CLASS"; }
        | REDIRECT { $$ = "REDIRECT"; }
 ;
 
-sectiontag: CLASSMETHODS { $$ = "CLASSMETHODS"; }
-          | INSTANCEMETHODS { $$ = "INSTANCEMETHODS"; }
-          | DESCRIPTION { $$ = "DESCRIPTION"; }
-          | EXAMPLES { $$ = "EXAMPLES"; }
+sectiontag: CLASSMETHODS { $$ = "CLASSMETHODS"; method_type = "CMETHOD"; }
+          | INSTANCEMETHODS { $$ = "INSTANCEMETHODS"; method_type = "IMETHOD"; }
+          | DESCRIPTION { $$ = "DESCRIPTION"; method_type = "METHOD"; }
+          | EXAMPLES { $$ = "EXAMPLES"; method_type = "METHOD"; }
 ;
 
 optsections: sections
@@ -262,7 +266,7 @@ sections: sections section { $$ = node_add_child($1,$2); }
         | subsections /* allow text before first section */
 ;
 
-section: SECTION words eol optsubsections { $$ = node_make_take_children("SECTION",$2,$4); }
+section: SECTION { method_type = "METHOD"; } words eol optsubsections { $$ = node_make_take_children("SECTION",$3,$5); }
        | sectiontag optsubsections { $$ = node_make_take_children($1, NULL,$2); }
 ;
 
@@ -287,7 +291,7 @@ subsubsections: subsubsections subsubsection { $$ = node_add_child($1,$2); }
               | body { $$ = node_make_take_children("(SUBSUBSECTIONS)",NULL,$1); }
 ; 
 
-subsubsection: METHOD words eol methodbody { $$ = node_make_take_children("METHOD",$2,$4); }
+subsubsection: METHOD words eol methodbody { $$ = node_make_take_children(method_type,$2,$4); }
              | COPYMETHOD words eol { $$ = node_make("COPYMETHOD",$2,NULL); }
              | PRIVATE words eol { $$ = node_make("PRIVATE",$2,NULL); }
 ;

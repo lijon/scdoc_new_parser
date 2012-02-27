@@ -1,6 +1,12 @@
 title:: This is my title! 
 summary:: And some summary..
 
+subsection:: 123
+this should not be allowed
+
+method:: test
+hmm
+
 description::
 
 link::foo::: hmm
@@ -27,7 +33,10 @@ list::
 ## 1
 ::
 
-classmethods::
+method:: auxMethod
+hej
+
+CLASSMETHODS::
 
 private:: bar
 
@@ -51,8 +60,14 @@ another method
 returns::
 An instance
 
+INSTANCEMETHODS::
+
+method:: myInstanceMethod
+hej
+
 section:: Another section
 subsection:: My subsection1
+method:: auxMethod2
 one
 
 subsection:: My subsection2
