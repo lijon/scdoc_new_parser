@@ -17,6 +17,8 @@ of text with code:: inline 123 :: code.
 
 code::
 some example block code\::
+	tab1
+		tab2
 on several: lines.
 foo \symbol bar
 ::
@@ -70,6 +72,6 @@ and some more text..
 
 table::
 ## 1 abc || link::2/3:: || 3
-## 4 || 5 || strong::6 + 5::
+## 4 || 5 || a    b			c  strong::6 + 5::
 ::
 

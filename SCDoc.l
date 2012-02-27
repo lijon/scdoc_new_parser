@@ -70,11 +70,12 @@
 \n\n+           return EMPTYLINES;
 
 <*>\\::         yylval.str = strdup("::"); return TEXT;
+<verbatim>\t    yylval.str = strdup("    "); return TEXT;
+[ \r\t]+        yylval.str = strdup(" "); return TEXT;
 
-[a-zA-Z]+    |
-<*>[ \t\r]   |
+[a-zA-Z]+       |
 <*>[.,!?(){}\[\]'"0-9]+ |
-<verbatim>[^:\\ ]+ |
+<verbatim>[^:\\\t ]+ |
 [^:\\\n]        |
 <*>.            yylval.str = strdup(yytext); return TEXT;
 
