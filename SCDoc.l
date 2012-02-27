@@ -70,12 +70,14 @@
 \n              return EOL;
 \n\n+           return EMPTYLINES;
 
-<*>\\::            yylval.str = strdup("::"); return TEXT;
+<*>\\::         yylval.str = strdup("::"); return TEXT;
+
 [a-zA-Z0-9]+    |
-[.,!?()]+   |
-<verbatim>[ \t\r]+   |
-[^:\\\n]   |
-.               yylval.str = strdup(yytext); return TEXT;
-<verbatim>[^:\\ ]+    yylval.str = strdup(yytext); return TEXT;
+[.,!?()]+       |
+<verbatim>[ \t\r]+ |
+<verbatim>[^:\\ ]+ |
+[^:\\\n]        |
+<*>.            yylval.str = strdup(yytext); return TEXT;
+
 %%
 

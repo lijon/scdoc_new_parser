@@ -3,7 +3,7 @@ summary:: And some summary..
 
 description::
 
-link::foo::
+link::foo::: hmm
 
 See (link::bar##classtree::) for more info.
 
@@ -11,13 +11,14 @@ section:: My section
 This is some prose..
 With two lines..
 
-And here's
+And here:
 another paragraph
 of text with code:: inline 123 :: code.
 
 code::
 some example block code\::
-on several lines
+on several: lines.
+foo \symbol bar
 ::
 
 list::
