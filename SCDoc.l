@@ -68,10 +68,15 @@
 \n              return EOL;
 \n\n+           return EMPTYLINES;
 
-:               |
 \\::            |
-[^:\\\n\t\r ]+    yylval.str = strdup(yytext); return TEXT;
+[a-zA-Z0-9]+    |
+[^:\\\n\t\r ]   |
+.               yylval.str = strdup(yytext); return TEXT;
 
 %%
 
-
+/*
+:               |
+\\::            |
+[^:\\\n\t\r ]+    yylval.str = strdup(yytext); return TEXT;
+*/

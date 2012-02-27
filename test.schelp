@@ -5,7 +5,7 @@ description::
 
 link::foo::
 
-See link::bar:: for more info.
+See (link::bar::) for more info.
 
 section:: My section
 This is some prose..
