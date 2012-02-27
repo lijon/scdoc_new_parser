@@ -9,25 +9,14 @@
 /*
 TODO:
 
-"optws words2" strips heading whitespace.
-is it possible to make a similar rule that strips trailing whitespace?
-if not, get rid of words2 and just use a function to strip ws before putting it into the syntax tree.
-
 could we make classmethods:: etc usable only if the doc started with class:: ?
 or should we deprecate class:: and just use title::?
 
-merge TEXT nodes into single PROSE nodes
-
-strip beginning and ending whitespace for node->text in all nodes?
-no, not for TEXT when it's broken by another tag..
-so for TEXT, only strip start after parbreak or section?
-
-PROSE means insert <p>  (but maybe not in list items etc?)
+merge TEXT nodes.
 
 replace node->children with a linked list (node->next and node->tail)?
 
-Is there actually any need for WHITESPACES token? why not just treat it as TEXT?
-
+note: PROSE means insert <p>  (but maybe not in list items etc?)
 */
 
 extern int yyparse();
@@ -171,7 +160,7 @@ void node_dump(Node *n, int level, int last) {
 // symbols
 %token TAGSYM BARS HASHES
 // text and whitespace
-%token <str> TEXT WHITESPACES
+%token <str> TEXT
 %token <i> EOL EMPTYLINES
 
 %type <i> eol
@@ -206,13 +195,16 @@ dochead: dochead headline { $$ = node_add_child($1,$2); }
 headline: headtag words2 eol { $$ = node_make($1,striptrailingws($2),NULL); }
 ;
 
-optws:
+words2: words
+      ;
+/*optws:
      | WHITESPACES { free($1); }
 ;
 
 words2: optws TEXT { $$ = $2; }
       | optws TEXT words { $$ = strmerge($2, $3); }
 ;
+*/
 
 headtag: CLASS { $$ = "CLASS"; }
        | TITLE { $$ = "TITLE"; }
@@ -238,7 +230,7 @@ sections: sections section { $$ = node_add_child($1,$2); }
 ;
 
 section: SECTION words2 eol optsubsections { $$ = node_make_take_children("SECTION",$2,$4); }
-       | sectiontag eol optsubsections { $$ = node_make_take_children($1, NULL,$3); }
+       | sectiontag optsubsections { $$ = node_make_take_children($1, NULL,$2); }
 ;
 
 optsubsections: subsections
@@ -320,8 +312,8 @@ blockB: blockA prose { $$ = node_add_child($1,$2); }
       ;
 
 bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
-        | listtag eatws listbody TAGSYM { $$ = node_make_take_children($1,NULL,$3); }
-        | tabletag eatws tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$3); }
+        | listtag listbody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
+        | tabletag tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
         | singletag words2 eol { $$ = node_make($1,$2,NULL); }
         | EMPTYLINES { $$ = NULL; }
@@ -383,9 +375,10 @@ rangetag: WARNING { $$ = "WARNING"; }
         | NOTE { $$ = "NOTE"; }
 ;
 
-eatws: eatws anyws
+/*eatws: eatws anyws
      | anyws
 ;
+*/
 
 listbody: listbody HASHES body { $$ = node_add_child($1, node_make_take_children("ITEM",NULL,$3)); }
         | HASHES body { $$ = node_make("(LISTBODY)",NULL, node_make_take_children("ITEM",NULL,$2)); }
@@ -404,12 +397,16 @@ tablecells: tablecells BARS body { $$ = node_add_child($1, node_make_take_childr
 
 
 
-anyws: WHITESPACES { free($1); }
+/*anyws: WHITESPACES { free($1); }
      | eol
 ;
 
 anyword: TEXT
        | WHITESPACES
+;
+*/
+
+anyword: TEXT
 ;
 
 words: words anyword { $$ = strmerge($1,$2); }

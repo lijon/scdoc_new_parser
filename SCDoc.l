@@ -14,70 +14,68 @@
 %x verbatim
 %%
 
-[ \t\r]+  {
-    yylval.str = strdup(yytext);
-    return WHITESPACES;
-}
+(?i:class::[ \t]*)         return CLASS;
+(?i:title::[ \t]*)         return TITLE;
+(?i:summary::[ \t]*)       return SUMMARY;
+(?i:related::[ \t]*)       return RELATED;
+(?i:categories::[ \t]*)    return CATEGORIES;
+(?i:redirect::[ \t]*)      return REDIRECT;
 
-(?i:class::)         return CLASS;
-(?i:title::)         return TITLE;
-(?i:summary::)       return SUMMARY;
-(?i:related::)       return RELATED;
-(?i:categories::)    return CATEGORIES;
-(?i:redirect::)      return REDIRECT;
+(?i:classtree::[ \t]*)     return CLASSTREE;
+(?i:copymethod::[ \t]*)    return COPYMETHOD;
+(?i:keyword::[ \t]*)       return KEYWORD;
+(?i:private::[ \t]*)       return PRIVATE;
 
-(?i:classtree::)     return CLASSTREE;
-(?i:copymethod::)    return COPYMETHOD;
-(?i:keyword::)       return KEYWORD;
-(?i:private::)       return PRIVATE;
+(?i:section::[ \t]*)       return SECTION;
+(?i:subsection::[ \t]*)    return SUBSECTION;
+(?i:method::[ \t]*)        return METHOD;
+(?i:[ \t\n]*argument::[ \t]*)      return ARGUMENT;
 
-(?i:section::)       return SECTION;
-(?i:subsection::)    return SUBSECTION;
-(?i:method::)        return METHOD;
-(?i:argument::)      return ARGUMENT;
+(?i:description::[ \t\n]*)   return DESCRIPTION;
+(?i:classmethods::[ \t\n]*)  return CLASSMETHODS;
+(?i:instancemethods::[ \t\n]*) return INSTANCEMETHODS;
+(?i:examples::[ \t\n]*)      return EXAMPLES;
 
-(?i:description::)   return DESCRIPTION;
-(?i:classmethods::)  return CLASSMETHODS;
-(?i:instancemethods::) return INSTANCEMETHODS;
-(?i:examples::)      return EXAMPLES;
-(?i:returns::)       return RETURNS;
-(?i:discussion::)    return DISCUSSION;
+(?i:returns::[ \t\n]*)       return RETURNS;
+(?i:discussion::[ \t\n]*)    return DISCUSSION;
 
-(?i:list::)          return LIST;
-(?i:tree::)          return TREE;
-(?i:numberedlist::)  return NUMBEREDLIST;
-(?i:definitionlist::) return DEFINITIONLIST;
-(?i:table::)         return TABLE;
-(?i:footnote::)      return FOOTNOTE;
-(?i:warning::)       return WARNING;
-(?i:note::)          return NOTE;
+(?i:[ \t\n]*list::[ \t\n]*)          return LIST;
+(?i:[ \t\n]*tree::[ \t\n]*)          return TREE;
+(?i:[ \t\n]*numberedlist::[ \t\n]*)  return NUMBEREDLIST;
+(?i:[ \t\n]*definitionlist::[ \t\n]*) return DEFINITIONLIST;
+(?i:[ \t\n]*table::[ \t\n]*)         return TABLE;
+(?i:[ \t\n]*footnote::[ \t\n]*)      return FOOTNOTE;
+(?i:[ \t\n]*warning::[ \t\n]*)       return WARNING;
+(?i:[ \t\n]*note::[ \t\n]*)          return NOTE;
 
-(?i:link::)          BEGIN(verbatim); return LINK;
-(?i:anchor::)        BEGIN(verbatim); return ANCHOR;
-(?i:soft::)          BEGIN(verbatim); return SOFT;
-(?i:image::)         BEGIN(verbatim); return IMAGE;
-(?i:strong::)        BEGIN(verbatim); return STRONG;
-(?i:emphasis::)      BEGIN(verbatim); return EMPHASIS;
+(?i:link::[ \t]*)          BEGIN(verbatim); return LINK;
+(?i:anchor::[ \t]*)        BEGIN(verbatim); return ANCHOR;
+(?i:soft::[ \t]*)          BEGIN(verbatim); return SOFT;
+(?i:image::[ \t]*)         BEGIN(verbatim); return IMAGE;
+(?i:strong::[ \t]*)        BEGIN(verbatim); return STRONG;
+(?i:emphasis::[ \t]*)      BEGIN(verbatim); return EMPHASIS;
 
-(?i:code::)          BEGIN(verbatim); return CODE;
-(?i:teletype::)      BEGIN(verbatim); return TELETYPE;
-(?i:math::)          BEGIN(verbatim); return MATH;
+(?i:code::[ \t]*)          BEGIN(verbatim); return CODE;
+(?i:teletype::[ \t]*)      BEGIN(verbatim); return TELETYPE;
+(?i:math::[ \t]*)          BEGIN(verbatim); return MATH;
 
-(?i:code::[ \t]*\n+)          BEGIN(verbatim); return CODEBLOCK;
-(?i:teletype::[ \t]*\n+)      BEGIN(verbatim); return TELETYPEBLOCK;
-(?i:math::[ \t]*\n+)          BEGIN(verbatim); return MATHBLOCK;
+(?i:[ \t\n]*code::[ \t]*\n+)          BEGIN(verbatim); return CODEBLOCK;
+(?i:[ \t\n]*teletype::[ \t]*\n+)      BEGIN(verbatim); return TELETYPEBLOCK;
+(?i:[ \t\n]*math::[ \t]*\n+)          BEGIN(verbatim); return MATHBLOCK;
 
-<*>::    BEGIN(0); return TAGSYM;
-\|\|            return BARS;
-\#\#            return HASHES;
+<*>[ \t\n]*::    BEGIN(0); return TAGSYM;
+[ \t\n]*\|\|[ \t\n]*            return BARS;
+[ \t\n]*\#\#[ \t\n]*            return HASHES;
 
 \n              return EOL;
 \n\n+           return EMPTYLINES;
 
 <*>\\::            yylval.str = strdup("::"); return TEXT;
-[a-zA-Z0-9.,!?]+    |
-[^:\\\n\t\r ]   |
+[a-zA-Z0-9]+    |
+[.,!?()]+   |
+<verbatim>[ \t\r]+   |
+[^:\\\n]   |
 .               yylval.str = strdup(yytext); return TEXT;
-<verbatim>[^:\\]+    yylval.str = strdup(yytext); return TEXT;
+<verbatim>[^:\\ ]+    yylval.str = strdup(yytext); return TEXT;
 %%
 

@@ -1,4 +1,4 @@
-title:: This is my title!
+title:: This is my title! 
 summary:: And some summary..
 
 description::
@@ -13,7 +13,8 @@ With two lines..
 
 And here's
 another paragraph
-of text with code:: inline :: code.
+of text with code:: inline 123 :: code.
+
 code::
 some example block code\::
 on several lines
@@ -24,7 +25,7 @@ list::
 ::
 
 classmethods::
-method:: foo
+    method:: foo
 
 my method
 argument:: one
@@ -62,7 +63,7 @@ and some more text..
 ::
 
 table::
-## 1 || link::2:: || 3
-## 4 || 5 || 6
+## 1 abc || link::2/3:: || 3
+## 4 || 5 || strong::6 + 5::
 ::
 
