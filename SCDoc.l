@@ -69,6 +69,8 @@
 \n              return EOL;
 \n\n+           return EMPTYLINES;
 
+\\\|\|          yylval.str = strdup("||"); return TEXT;
+\\\#\#          yylval.str = strdup("##"); return TEXT;
 <*>\\::         yylval.str = strdup("::"); return TEXT;
 <verbatim>\t    yylval.str = strdup("    "); return TEXT;
 [ \r\t]+        yylval.str = strdup(" "); return TEXT;

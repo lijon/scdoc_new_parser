@@ -12,12 +12,12 @@ This is some prose..
 With two lines..
 
 And here:
-another paragraph
-of text with code:: inline 123 :: code.
+another \## paragraph
+of text \|| with code:: inline 123 :: code.
 
 code::
 some example block code\::
-	tab1
+	tab1 ## abc ||
 		tab2
 on several: lines.
 foo \symbol bar
