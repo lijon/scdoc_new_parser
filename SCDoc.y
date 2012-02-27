@@ -22,33 +22,11 @@ strip beginning and ending whitespace for node->text in all nodes?
 no, not for TEXT when it's broken by another tag..
 so for TEXT, only strip start after parbreak or section?
 
-handle inline/block display (CODE, MATH, PROSE, more?)
-...
-parbreak: use a state variable new_paragraph which is set to true after each section and similar.
-when this is true any other element should be prefixed with a NEWPAR element, which clears the new_paragraph flag.
-a PARBREAK element sets the flag (and removes the PARBREAK element)
-all block display elements behaves as if there is always (or never) a PARBREAK before it.
-set new_paragraph=true after a block display element?
-<p>text... <p><code>...</code> <p>text...
-or if never:
-<p>text... <div code>...</div> text...
-treat lists and note/warning as block display elements?
-or is there a point in having a list or code block in the same paragraph and not separated into another?
-...
-the current implementation does not put a <p> before code blocks and lists, but text after a block
-is put in a new <p>.
-but what does that mean for stuff like:
-    link::foo::
-
-    link::bar::
-well, any inline tag should be treated as PROSE, so this would be:
-    <p><a href="foo">foo</a>
-    <p><a href="bar">bar</a>
-So, can we look at it like this: use a PARAGRAPH node where the children only consists of
-inline tags and TEXT nodes? a PARAGRAPH is broken by EMPTYLINES or a block element.
-Then, can we build this into the syntax instead of postprocessing the tree?
+PROSE means insert <p>  (but maybe not in list items etc?)
 
 replace node->children with a linked list (node->next and node->tail)?
+
+Is there actually any need for WHITESPACES token? why not just treat it as TEXT?
 
 */
 
@@ -360,6 +338,15 @@ proseelem: // words { $$ = node_make("TEXT",$1,NULL); } // 2 shift/reduce confli
          | FOOTNOTE body TAGSYM { $$ = node_make("FOOTNOTE",NULL,$2); }
          | EOL { $$ = node_create("NL"); }
          ;
+/*
+the 2 shift/reduce conflicts using 'words' above is due to prose list vs words list:
+    prose(proseelem(words(word1, word2)))
+vs
+    prose(proseelem(words(word1)), proseelem(words(word2)))
+we want the first one..
+
+Probably solvable by using two alternating lists similar to blockA/blockB above?
+*/
 
 inlinetag: LINK { $$ = "LINK"; }
          | STRONG { $$ = "STRONG"; }

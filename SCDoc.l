@@ -11,6 +11,7 @@
 %option yylineno
   /* %option bison-locations */
 
+%x verbatim
 %%
 
 [ \t\r]+  {
@@ -51,37 +52,32 @@
 (?i:warning::)       return WARNING;
 (?i:note::)          return NOTE;
 
-(?i:link::)          return LINK;
-(?i:anchor::)        return ANCHOR;
-(?i:soft::)          return SOFT;
-(?i:image::)         return IMAGE;
-(?i:strong::)        return STRONG;
-(?i:emphasis::)      return EMPHASIS;
+(?i:link::)          BEGIN(verbatim); return LINK;
+(?i:anchor::)        BEGIN(verbatim); return ANCHOR;
+(?i:soft::)          BEGIN(verbatim); return SOFT;
+(?i:image::)         BEGIN(verbatim); return IMAGE;
+(?i:strong::)        BEGIN(verbatim); return STRONG;
+(?i:emphasis::)      BEGIN(verbatim); return EMPHASIS;
 
-(?i:code::)          return CODE;
-(?i:teletype::)      return TELETYPE;
-(?i:math::)          return MATH;
+(?i:code::)          BEGIN(verbatim); return CODE;
+(?i:teletype::)      BEGIN(verbatim); return TELETYPE;
+(?i:math::)          BEGIN(verbatim); return MATH;
 
-(?i:code::[ \t]*\n+)          return CODEBLOCK;
-(?i:teletype::[ \t]*\n+)      return TELETYPEBLOCK;
-(?i:math::[ \t]*\n+)          return MATHBLOCK;
+(?i:code::[ \t]*\n+)          BEGIN(verbatim); return CODEBLOCK;
+(?i:teletype::[ \t]*\n+)      BEGIN(verbatim); return TELETYPEBLOCK;
+(?i:math::[ \t]*\n+)          BEGIN(verbatim); return MATHBLOCK;
 
-::              return TAGSYM;
+<*>::    BEGIN(0); return TAGSYM;
 \|\|            return BARS;
 \#\#            return HASHES;
 
 \n              return EOL;
 \n\n+           return EMPTYLINES;
 
-\\::            |
-[a-zA-Z0-9]+    |
+<*>\\::            yylval.str = strdup("::"); return TEXT;
+[a-zA-Z0-9.,!?]+    |
 [^:\\\n\t\r ]   |
 .               yylval.str = strdup(yytext); return TEXT;
-
+<verbatim>[^:\\]+    yylval.str = strdup(yytext); return TEXT;
 %%
 
-/*
-:               |
-\\::            |
-[^:\\\n\t\r ]+    yylval.str = strdup(yytext); return TEXT;
-*/
