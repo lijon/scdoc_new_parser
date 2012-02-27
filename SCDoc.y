@@ -189,6 +189,7 @@ void node_dump(Node *n, int level, int last) {
 %token LIST TREE NUMBEREDLIST DEFINITIONLIST TABLE FOOTNOTE NOTE WARNING
 // modal range tags that take multi-line text
 %token CODE LINK ANCHOR SOFT IMAGE TELETYPE MATH STRONG EMPHASIS
+%token CODEBLOCK TELETYPEBLOCK MATHBLOCK
 // symbols
 %token TAGSYM BARS HASHES
 // text and whitespace
@@ -196,13 +197,14 @@ void node_dump(Node *n, int level, int last) {
 %token <i> EOL EMPTYLINES
 
 %type <i> eol
-%type <id> headtag sectiontag singletag listtag modaltag modaltag_oneline rangetag tabletag
+%type <id> headtag sectiontag singletag listtag rangetag tabletag inlinetag blocktag
 %type <str> words2 anyword words anywordnl wordsnl
 %type <node> arg optreturns optdiscussion body bodyelem 
 %type <node> optsubsections optsubsubsections methodbody  
 %type <node> dochead headline optsections sections section
 %type <node> subsections subsection subsubsection subsubsections
 %type <node> optbody optargs args listbody tablebody tablecells tablerow
+%type <node> prose proseelem blockA blockB
 
 // %type <str> wordsnl2 anywordnl2
 
@@ -317,32 +319,82 @@ optdiscussion: DISCUSSION body { $$ = node_make_take_children("DISCUSSION",NULL,
              | { $$ = NULL; }
 ;
 
-body: body bodyelem { $$ = node_add_child($1,$2); }
-    | bodyelem { $$ = node_make("(PROSE)",NULL,$1); }
+//body: body bodyelem { $$ = node_add_child($1,$2); }
+//    | bodyelem { $$ = node_make("(SECTIONBODY)",NULL,$1); }
+//    ;
+
+/*
+body contains a list of bodyelem's (A) and prose (B) such that
+the list can start and end with either A or B, and A can repeat while B can not
+*/
+
+body: blockA
+    | blockB
     ;
+
+blockA: blockB bodyelem { $$ = node_add_child($1,$2); }
+      | blockA bodyelem { $$ = node_add_child($1,$2); }
+      | bodyelem { $$ = node_make("(SECTIONBODY)",NULL,$1); }
+      ;
+
+blockB: blockA prose { $$ = node_add_child($1,$2); }
+      | prose { $$ = node_make("(SECTIONBODY)",NULL,$1); }
+      ;
 
 bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | listtag eatws listbody TAGSYM { $$ = node_make_take_children($1,NULL,$3); }
         | tabletag eatws tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$3); }
-        | modaltag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); /*FIXME: detect block display: if it starts with eol */}
-        | modaltag_oneline words TAGSYM { $$ = node_make($1,$2,NULL); /*FIXME: detect block display: if it starts with eol */}
+        | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
         | singletag words2 eol { $$ = node_make($1,$2,NULL); }
-/*        | wordsnl2 { $$ = node_make("TEXT",$1,NULL); } // FIXME: 3 shift/reduce conflicts, but merges words and lines
-        | EMPTYLINES { $$ = node_create("PARBREAK"); } // for wordsnl2
-*/
-        | words { $$ = node_make("TEXT",$1,NULL); } // FIXME: 2 shift/reduce conflicts, but merges words
-//        | anyword { $$ = node_make("WORD",$1,NULL); } // creates a WORD for each word and whitespace
-        | eol { $$ = $1?node_create("PARBREAK"):NULL; }
+        | EMPTYLINES { $$ = NULL; }
+        | IMAGE words TAGSYM { $$ = node_make("IMAGE",$2,NULL); }
         ;
 
-/*anywordnl2: anyword
-         | EOL { $$ = strdup("\n"); }
+prose: prose proseelem { $$ = node_add_child($1, $2); }
+     | proseelem { $$ = node_make("PROSE",NULL,$1); }
+     ;
+
+proseelem: // words { $$ = node_make("TEXT",$1,NULL); } // 2 shift/reduce conflicts
+           anyword { $$ = node_make("TEXT",$1,NULL); } // one TEXT for each word
+         | inlinetag words TAGSYM { $$ = node_make($1,$2,NULL); }
+         | FOOTNOTE body TAGSYM { $$ = node_make("FOOTNOTE",NULL,$2); }
+         | EOL { $$ = node_create("NL"); }
          ;
 
-wordsnl2: wordsnl2 anywordnl2 { $$ = strmergefree($1,$2); }
-       | anywordnl2
-       ;
-*/
+inlinetag: LINK { $$ = "LINK"; }
+         | STRONG { $$ = "STRONG"; }
+         | SOFT { $$ = "SOFT"; }
+         | EMPHASIS { $$ = "EMPHASIS"; }
+         | CODE { $$ = "CODE"; }
+         | TELETYPE { $$ = "TELETYPE"; }
+         | MATH { $$ = "MATH"; }
+         | ANCHOR { $$ = "ANCHOR"; }
+;
+
+blocktag: CODEBLOCK { $$ = "CODEBLOCK"; }
+        | TELETYPEBLOCK { $$ = "TELETYPEBLOCK"; }
+        | MATHBLOCK { $$ = "MATHBLOCK"; }
+;
+
+singletag: CLASSTREE { $$ = "CLASSTREE"; }
+         | COPYMETHOD { $$ = "COPYMETHOD"; }
+         | KEYWORD { $$ = "KEYWORD"; }
+         | PRIVATE { $$ = "PRIVATE"; }
+;
+
+
+listtag: LIST { $$ = "LIST"; }
+       | TREE { $$ = "TREE"; }
+       | NUMBEREDLIST { $$ = "NUMBEREDLIST"; }
+;
+       
+tabletag: DEFINITIONLIST { $$ = "DEFINITIONLIST"; }
+        | TABLE { $$ = "TABLE"; }
+;
+
+rangetag: WARNING { $$ = "WARNING"; }
+        | NOTE { $$ = "NOTE"; }
+;
 
 eatws: eatws anyws
      | anyws
@@ -363,39 +415,7 @@ tablecells: tablecells BARS body { $$ = node_add_child($1, node_make_take_childr
           | body { $$ = node_make("(TABLECELLS)",NULL, node_make_take_children("TABCOL",NULL,$1)); }
 ;
 
-singletag: CLASSTREE { $$ = "CLASSTREE"; }
-         | COPYMETHOD { $$ = "COPYMETHOD"; }
-         | KEYWORD { $$ = "KEYWORD"; }
-         | PRIVATE { $$ = "PRIVATE"; }
-;
 
-modaltag: CODE { $$ = "CODE"; }
-          | TELETYPE { $$ = "TELETYPE"; }
-          | MATH { $$ = "MATH"; }
-          | STRONG { $$ = "STRONG"; }
-          | SOFT { $$ = "SOFT"; }
-          | EMPHASIS { $$ = "EMPHASIS"; }
-;
-
-modaltag_oneline: LINK { $$ = "LINK"; }
-                | IMAGE { $$ = "IMAGE"; }
-                | ANCHOR { $$ = "ANCHOR"; }
-;
-
-
-listtag: LIST { $$ = "LIST"; }
-       | TREE { $$ = "TREE"; }
-       | NUMBEREDLIST { $$ = "NUMBEREDLIST"; }
-;
-       
-tabletag: DEFINITIONLIST { $$ = "DEFINITIONLIST"; }
-        | TABLE { $$ = "TABLE"; }
-;
-
-rangetag: FOOTNOTE { $$ = "FOOTNOTE"; }
-        | WARNING { $$ = "WARNING"; }
-        | NOTE { $$ = "NOTE"; }
-;
 
 anyws: WHITESPACES { free($1); }
      | eol

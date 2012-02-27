@@ -19,11 +19,14 @@ some example block code
 on several lines
 ::
 
+list::
+## 1
+::
+
 classmethods::
 method:: foo
 
 my method
-
 argument:: one
 first arg code::cool:: yeah
 

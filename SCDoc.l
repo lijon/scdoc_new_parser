@@ -55,11 +55,16 @@
 (?i:anchor::)        return ANCHOR;
 (?i:soft::)          return SOFT;
 (?i:image::)         return IMAGE;
-(?i:teletype::)      return TELETYPE;
-(?i:math::)          return MATH;
 (?i:strong::)        return STRONG;
 (?i:emphasis::)      return EMPHASIS;
+
 (?i:code::)          return CODE;
+(?i:teletype::)      return TELETYPE;
+(?i:math::)          return MATH;
+
+(?i:code::[ \t]*\n+)          return CODEBLOCK;
+(?i:teletype::[ \t]*\n+)      return TELETYPEBLOCK;
+(?i:math::[ \t]*\n+)          return MATHBLOCK;
 
 ::              return TAGSYM;
 \|\|            return BARS;
