@@ -43,16 +43,17 @@ discussion::
 blah blah...
 
 section:: Another section
-
-subsection:: My subsection
+subsection:: My subsection1
 one
 
-subsection:: My subsection
+subsection:: My subsection2
 two
 
 Hello?
 
-note:: note ::
+note::
+note
+::
 
 examples::
 list::

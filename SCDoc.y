@@ -12,15 +12,9 @@ TODO:
 could we make classmethods:: etc usable only if the doc started with class:: ?
 or should we deprecate class:: and just use title::?
 
-merge TEXT nodes.
-
 replace node->children with a linked list (node->next and node->tail)?
 
 note: PROSE means insert <p>  (but maybe not in list items etc?)
-
-tags can not eat heading newlines since it conflicts with eol as end-token for single-line tags..
-this means we now sometimes get trailing NL nodes in prose blocks.. we could simply filter these out later?
-or is there a better solution?
 
 */
 
@@ -116,6 +110,41 @@ Node * node_make_take_children(const char *id, char *text, Node *src) {
     return n;
 }
 
+void node_fixup_tree(Node *n) {
+    int i;
+    if(n->n_childs) {
+        Node *last = n->children[n->n_childs-1];
+        if(last->id=="NL") {
+            free(last);
+            n->n_childs--;
+        }
+        last = NULL;
+        for(i = 0; i < n->n_childs; i++) {
+            Node *child = n->children[i];
+            if((child->id=="TEXT" || child->id=="NL") && last && last->id=="TEXT") {
+                if(child->id=="NL") {
+                    last->text = (char*)realloc(last->text,strlen(last->text)+2);
+                    strcat(last->text," ");
+                } else {
+                    last->text = strmerge(last->text,child->text);
+                }
+                free(child);
+                n->children[i] = NULL;
+            } else {
+                node_fixup_tree(child);
+                last = child;
+            }
+        }
+        int j = 0;
+        for(i = 0; i < n->n_childs; i++) {
+            if(n->children[i]) {
+               n->children[j++] = n->children[i];
+            }
+        }
+        n->n_childs = j;
+    }
+}
+
 static int node_dump_level_done[32] = {0,};
 void node_dump(Node *n, int level, int last) {
     int i;
@@ -189,6 +218,7 @@ document: dochead optsections
         Node *n = node_create("DOCUMENT");
         node_add_child(n, $1);
         node_add_child(n, $2);
+        node_fixup_tree(n);
         node_dump(n,0,1);
     }
 ;

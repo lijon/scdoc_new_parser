@@ -71,9 +71,9 @@
 
 <*>\\::         yylval.str = strdup("::"); return TEXT;
 
-[a-zA-Z0-9]+    |
-[.,!?()]+       |
-<*>[ \t\r]+ |
+[a-zA-Z]+    |
+<*>[ \t\r]   |
+<*>[.,!?(){}\[\]'"0-9]+ |
 <verbatim>[^:\\ ]+ |
 [^:\\\n]        |
 <*>.            yylval.str = strdup(yytext); return TEXT;
