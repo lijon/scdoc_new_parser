@@ -19,6 +19,7 @@ some example block code
 on several lines
 ::
 
+classmethods::
 method:: foo
 
 my method

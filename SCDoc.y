@@ -23,8 +23,30 @@ no, not for TEXT when it's broken by another tag..
 so for TEXT, only strip start after parbreak or section?
 
 handle inline/block display (CODE, MATH, PROSE, more?)
+...
+parbreak: use a state variable new_paragraph which is set to true after each section and similar.
+when this is true any other element should be prefixed with a NEWPAR element, which clears the new_paragraph flag.
+a PARBREAK element sets the flag (and removes the PARBREAK element)
+all block display elements behaves as if there is always (or never) a PARBREAK before it.
+set new_paragraph=true after a block display element?
+<p>text... <p><code>...</code> <p>text...
+or if never:
+<p>text... <div code>...</div> text...
+treat lists and note/warning as block display elements?
+or is there a point in having a list or code block in the same paragraph and not separated into another?
+...
+the current implementation does not put a <p> before code blocks and lists, but text after a block
+is put in a new <p>.
+but what does that mean for stuff like:
+    link::foo::
 
-replace strmerge with a linked list string struct
+    link::bar::
+well, any inline tag should be treated as PROSE, so this would be:
+    <p><a href="foo">foo</a>
+    <p><a href="bar">bar</a>
+So, can we look at it like this: use a PARAGRAPH node where the children only consists of
+inline tags and TEXT nodes? a PARAGRAPH is broken by EMPTYLINES or a block element.
+Then, can we build this into the syntax instead of postprocessing the tree?
 
 replace node->children with a linked list (node->next and node->tail)?
 
@@ -49,17 +71,10 @@ int main()
     yyparse();
 }
 
+// merge a+b and free b
 char *strmerge(char *a, char *b) {
-    char *s = (char *)malloc(strlen(a)+strlen(b)+1);
-    strcpy(s,a);
+    char *s = (char *)realloc(a,strlen(a)+strlen(b)+1);
     strcat(s,b);
-    return s;
-}
-
-// merge strings and free the old ones
-char *strmergefree(char *a, char *b) {
-    char *s = strmerge(a,b);
-    free(a);
     free(b);
     return s;
 }
@@ -216,7 +231,7 @@ optws:
 ;
 
 words2: optws TEXT { $$ = $2; }
-      | optws TEXT words { $$ = strmergefree($2, $3); }
+      | optws TEXT words { $$ = strmerge($2, $3); }
 ;
 
 headtag: CLASS { $$ = "CLASS"; }
@@ -390,7 +405,7 @@ anyword: TEXT
        | WHITESPACES
 ;
 
-words: words anyword { $$ = strmergefree($1,$2); }
+words: words anyword { $$ = strmerge($1,$2); }
      | anyword
 ;
 
@@ -402,7 +417,7 @@ anywordnl: anyword
          | eol { $$ = strdup("\n"); }
 ;
 
-wordsnl: wordsnl anywordnl { $$ = strmergefree($1,$2); }
+wordsnl: wordsnl anywordnl { $$ = strmerge($1,$2); }
        | anywordnl
 ;
 
