@@ -9,6 +9,7 @@
 %option yylineno noyywrap never-interactive nounistd
 
 %x verbatim
+%x verbatim2
 %%
 
 (?i:[ \t]*class::[ \t]*)         return CLASS;
@@ -55,26 +56,28 @@
 (?i:teletype::[ \t]*)      BEGIN(verbatim); return TELETYPE;
 (?i:math::[ \t]*)          BEGIN(verbatim); return MATH;
 
-(?i:[ \t]*code::[ \t]*\n+)          BEGIN(verbatim); return CODEBLOCK;
-(?i:[ \t]*teletype::[ \t]*\n+)      BEGIN(verbatim); return TELETYPEBLOCK;
-(?i:[ \t]*math::[ \t]*\n+)          BEGIN(verbatim); return MATHBLOCK;
+(?i:[ \t]*code::[ \t]*\n+)          BEGIN(verbatim2); return CODEBLOCK;
+(?i:[ \t]*teletype::[ \t]*\n+)      BEGIN(verbatim2); return TELETYPEBLOCK;
+(?i:[ \t]*math::[ \t]*\n+)          BEGIN(verbatim2); return MATHBLOCK;
 
-<*>[ \t\n]*::    BEGIN(0); return TAGSYM;
+<INITIAL,verbatim>[ \t\n]*::    BEGIN(0); return TAGSYM;
+<verbatim2>\n[ \t\n]*::           BEGIN(0); return TAGSYM;
 [ \t\n]*\|\|[ \t\n]*            return BARS;
 [ \t\n]*\#\#[ \t\n]*            return HASHES;
 
-\n              return EOL;
+<verbatim2>\n   scdoclval.str = strdup("\n"); return TEXT;
+<INITIAL,verbatim>\n              return EOL;
 \n\n+           return EMPTYLINES;
 
 \\\|\|          scdoclval.str = strdup("||"); return TEXT;
 \\\#\#          scdoclval.str = strdup("##"); return TEXT;
-<*>\\::         scdoclval.str = strdup("::"); return TEXT;
-<verbatim>\t    scdoclval.str = strdup("    "); return TEXT;
+<INITIAL,verbatim>\\::         scdoclval.str = strdup("::"); return TEXT;
+<verbatim,verbatim2>\t    scdoclval.str = strdup("    "); return TEXT;
 [ \r\t]+        scdoclval.str = strdup(" "); return TEXT;
 
 [a-zA-Z]+       |
 <*>[.,!?(){}\[\]'"0-9]+ |
-<verbatim>[^:\\\t ]+ |
+<verbatim,verbatim2>[^:\\\t\n ]+ |
 [^:\\\n]        |
 <*>.            scdoclval.str = strdup(scdoctext); return TEXT;
 

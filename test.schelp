@@ -18,13 +18,15 @@ And here:
 another \## paragraph
 of text \|| with code:: inline 123 :: code.
 
-code::
-some example block code\::
+    code::  
+some example block code::
 	tab1 ## abc ||
 		tab2
 on several: lines.
 foo \symbol bar
-::
+
+
+    ::
 
 list::
 ## 1
