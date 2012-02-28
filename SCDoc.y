@@ -28,6 +28,7 @@ static const char * method_type = NULL;
 void scdocerror(const char *str)
 {
     fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,scdoctext);
+    exit(1);
 }
 
 int main()
@@ -312,7 +313,8 @@ args: args arg { $$ = node_add_child($1,$2); }
     | arg { $$ = node_make("ARGUMENTS",NULL,$1); }
 ;
 
-arg: ARGUMENT words eol body { $$ = node_make_take_children("ARGUMENT", $2, $4); }
+arg: ARGUMENT words eol optbody { $$ = node_make_take_children("ARGUMENT", $2, $4); }
+   | ARGUMENT eol body { $$ = node_make_take_children("ARGUMENT", NULL, $3); }
 ;
 
 optreturns: RETURNS body { $$ = node_make_take_children("RETURNS",NULL,$2); }
@@ -423,10 +425,9 @@ tablebody: tablebody tablerow { $$ = node_add_child($1,$2); }
          | tablerow { $$ = node_make("(TABLEBODY)",NULL,$1); }
 ;
 
-tablecells: tablecells BARS body { $$ = node_add_child($1, node_make_take_children("TABCOL",NULL,$3)); }
-          | body { $$ = node_make("(TABLECELLS)",NULL, node_make_take_children("TABCOL",NULL,$1)); }
+tablecells: tablecells BARS optbody { $$ = node_add_child($1, node_make_take_children("TABCOL",NULL,$3)); }
+          | optbody { $$ = node_make("(TABLECELLS)",NULL, node_make_take_children("TABCOL",NULL,$1)); }
 ;
-
 
 
 /*anyws: WHITESPACES { free($1); }
