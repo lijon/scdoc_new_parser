@@ -22,6 +22,7 @@ int scdocparse();
 int scdoclex();
 extern int scdoclineno;
 extern char *scdoctext;
+extern int scdoc_start_token;
 
 static const char * method_type = NULL;
 
@@ -29,12 +30,6 @@ void scdocerror(const char *str)
 {
     fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,scdoctext);
     exit(1);
-}
-
-int main()
-{
-    method_type = "METHOD";
-    scdocparse();
 }
 
 // merge a+b and free b
@@ -207,17 +202,23 @@ void node_dump(Node *n, int level, int last) {
 %type <node> optbody optargs args listbody tablebody tablecells tablerow
 %type <node> prose proseelem blockA blockB
 
-// %type <str> wordsnl2 anywordnl2
+%token START_FULL START_PARTIAL
 
 %start document
 
 %%
 
-document: dochead optsections
+document: START_FULL dochead optsections
     {
         Node *n = node_create("DOCUMENT");
-        node_add_child(n, $1);
         node_add_child(n, $2);
+        node_add_child(n, $3);
+        node_fixup_tree(n);
+        node_dump(n,0,1);
+    }
+       | START_PARTIAL sections
+    {
+        Node *n = node_make_take_children("BODY",NULL,$2);
         node_fixup_tree(n);
         node_dump(n,0,1);
     }
@@ -457,4 +458,15 @@ anywordnl: anyword
 wordsnl: wordsnl anywordnl { $$ = strmerge($1,$2); }
        | anywordnl
 ;
+
+%%
+
+int main(int argc, char **argv)
+{
+    method_type = "METHOD";
+    scdoc_start_token = START_FULL;
+    if(argc>1 && strcmp(argv[1],"--partial")==0)
+        scdoc_start_token = START_PARTIAL;
+    scdocparse();
+}
 

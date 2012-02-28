@@ -4,6 +4,8 @@
 #include "SCDoc.h"
 #include "SCDoc.tab.h"
 
+int scdoc_start_token = 0;
+
 %}
 
 %option yylineno noyywrap never-interactive nounistd
@@ -11,6 +13,15 @@
 %x verbatim
 %x verbatim2
 %%
+%{
+
+if (scdoc_start_token) {
+    int t = scdoc_start_token;
+    scdoc_start_token = 0;
+    return t;
+}
+
+%}
 
 (?i:[ \t]*class::[ \t]*)         return CLASS;
 (?i:[ \t]*title::[ \t]*)         return TITLE;
