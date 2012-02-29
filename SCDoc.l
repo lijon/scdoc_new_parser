@@ -78,8 +78,8 @@ if (scdoc_start_token) {
 
 <verbatim2>\n   scdoclval.str = strdup("\n"); return TEXT;
 <verbatim>\n+   scdoclval.str = strdup(" "); return TEXT;
-<INITIAL>\n     return EOL;
-\n\n+           return EMPTYLINES;
+<INITIAL>\n     return NEWLINE;
+\n([ \t]*\n)+           return EMPTYLINES;
 
 \\\|\|                  scdoclval.str = strdup("||"); return TEXT;
 \\\#\#                  scdoclval.str = strdup("##"); return TEXT;
@@ -87,6 +87,7 @@ if (scdoc_start_token) {
 <verbatim,verbatim2>\t  scdoclval.str = strdup("    "); return TEXT;
 [ \r\t]+                scdoclval.str = strdup(" "); return TEXT;
 
+[a-zA-Z]+:\/\/[^ \t\n:]+        scdoclval.str = strdup(scdoctext); return URL;
 [a-zA-Z]+                       |
 <*>[.,!?(){}\[\]'"0-9]+         |
 <verbatim,verbatim2>[^:\\\t\n ]+ |

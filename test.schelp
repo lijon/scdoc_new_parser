@@ -1,5 +1,6 @@
 title:: This is my title! 
 summary:: And some summary..
+related:: http://kymatica.com, Classes/FooBar
 
 method:: test
 hmm
@@ -106,4 +107,10 @@ will be in strong text.
 
 ok?
 ::
+
+See footnote::website http://kymatica.com:: for more info.
+keyword:: something
+
+
+see strong::http://kymatica.com/foo:: for more info
 

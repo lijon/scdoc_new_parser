@@ -6,18 +6,6 @@
 #include <ctype.h>
 #include "SCDoc.h"
 
-/*
-TODO:
-
-could we make classmethods:: etc usable only if the doc started with class:: ?
-or should we deprecate class:: and just use title::?
-
-replace node->children with a linked list (node->next and node->tail)?
-
-note: PROSE means insert <p>  (but maybe not in list items etc?)
-
-*/
-
 int scdocparse();
 int scdoclex();
 void scdocrestart (FILE *input_file  );
@@ -195,11 +183,11 @@ void node_dump(Node *n, int level, int last) {
 // symbols
 %token TAGSYM BARS HASHES
 // text and whitespace
-%token <str> TEXT
-%token EOL EMPTYLINES
+%token <str> TEXT URL
+%token NEWLINE EMPTYLINES
 
 %type <id> headtag sectiontag listtag rangetag tabletag inlinetag blocktag
-%type <str> anyword words anywordnl wordsnl
+%type <str> anyword words anywordnl wordsnl anywordurl words2
 %type <node> arg optreturns optdiscussion body bodyelem 
 %type <node> optsubsections optsubsubsections methodbody  
 %type <node> dochead headline optsections sections section
@@ -233,17 +221,8 @@ dochead: dochead headline { $$ = node_add_child($1,$2); }
        | headline { $$ = node_make("HEADER",NULL,$1); }
 ;
 
-headline: headtag words eol { $$ = node_make($1,striptrailingws($2),NULL); }
+headline: headtag words2 eol { $$ = node_make($1,striptrailingws($2),NULL); }
 ;
-
-/*optws:
-     | WHITESPACES { free($1); }
-;
-
-words2: optws TEXT { $$ = $2; }
-      | optws TEXT words { $$ = strmerge($2, $3); }
-;
-*/
 
 headtag: CLASS { $$ = "CLASS"; }
        | TITLE { $$ = "TITLE"; }
@@ -268,7 +247,7 @@ sections: sections section { $$ = node_add_child($1,$2); }
         | subsubsections { $$ = node_make_take_children("BODY",NULL,$1); } /* allow text before first section */
 ;
 
-section: SECTION { method_type = "METHOD"; } words eol optsubsections { $$ = node_make_take_children("SECTION",$3,$5); }
+section: SECTION { method_type = "METHOD"; } words2 eol optsubsections { $$ = node_make_take_children("SECTION",$3,$5); }
        | sectiontag optsubsections { $$ = node_make_take_children($1, NULL,$2); }
 ;
 
@@ -281,7 +260,7 @@ subsections: subsections subsection { $$ = node_add_child($1,$2); }
            | subsubsections
 ;
 
-subsection: SUBSECTION words eol optsubsubsections { $$ = node_make_take_children("SUBSECTION", $2, $4); }
+subsection: SUBSECTION words2 eol optsubsubsections { $$ = node_make_take_children("SUBSECTION", $2, $4); }
 ;
 
 optsubsubsections: subsubsections
@@ -359,29 +338,20 @@ bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
         | CLASSTREE words eol { $$ = node_make("CLASSTREE",$2,NULL); }
         | EMPTYLINES { $$ = NULL; }
-        | IMAGE words TAGSYM { $$ = node_make("IMAGE",$2,NULL); }
+        | IMAGE words2 TAGSYM { $$ = node_make("IMAGE",$2,NULL); }
         ;
 
 prose: prose proseelem { $$ = node_add_child($1, $2); }
      | proseelem { $$ = node_make("PROSE",NULL,$1); }
      ;
 
-proseelem: // words { $$ = node_make("TEXT",$1,NULL); } // 2 shift/reduce conflicts
-           anyword { $$ = node_make("TEXT",$1,NULL); } // one TEXT for each word
+proseelem: anyword { $$ = node_make("TEXT",$1,NULL); } // one TEXT for each word
+         | URL { $$ = node_make("LINK",$1,NULL); }
          | inlinetag words TAGSYM { $$ = node_make($1,$2,NULL); }
          | KEYWORD words eol { $$ = node_make("KEYWORD",$2,NULL); }
-         | FOOTNOTE body TAGSYM { $$ = node_make("FOOTNOTE",NULL,$2); }
-         | EOL { $$ = node_create("NL"); }
+         | FOOTNOTE body TAGSYM { $$ = node_make_take_children("FOOTNOTE",NULL,$2); }
+         | NEWLINE { $$ = node_create("NL"); }
          ;
-/*
-the 2 shift/reduce conflicts using 'words' above is due to prose list vs words list:
-    prose(proseelem(words(word1, word2)))
-vs
-    prose(proseelem(words(word1)), proseelem(words(word2)))
-we want the first one..
-
-Probably solvable by using two alternating lists similar to blockA/blockB above?
-*/
 
 inlinetag: LINK { $$ = "LINK"; }
          | STRONG { $$ = "STRONG"; }
@@ -398,11 +368,6 @@ blocktag: CODEBLOCK { $$ = "CODEBLOCK"; }
         | MATHBLOCK { $$ = "MATHBLOCK"; }
 ;
 
-//singletag: CLASSTREE { $$ = "CLASSTREE"; }
-//         | KEYWORD { $$ = "KEYWORD"; }
-//;
-
-
 listtag: LIST { $$ = "LIST"; }
        | TREE { $$ = "TREE"; }
        | NUMBEREDLIST { $$ = "NUMBEREDLIST"; }
@@ -415,11 +380,6 @@ tabletag: DEFINITIONLIST { $$ = "DEFINITIONLIST"; }
 rangetag: WARNING { $$ = "WARNING"; }
         | NOTE { $$ = "NOTE"; }
 ;
-
-/*eatws: eatws anyws
-     | anyws
-;
-*/
 
 listbody: listbody HASHES body { $$ = node_add_child($1, node_make_take_children("ITEM",NULL,$3)); }
         | HASHES body { $$ = node_make("(LISTBODY)",NULL, node_make_take_children("ITEM",NULL,$2)); }
@@ -436,15 +396,9 @@ tablecells: tablecells BARS optbody { $$ = node_add_child($1, node_make_take_chi
           | optbody { $$ = node_make("(TABLECELLS)",NULL, node_make_take_children("TABCOL",NULL,$1)); }
 ;
 
-
-/*anyws: WHITESPACES { free($1); }
-     | eol
+anywordurl: TEXT
+          | URL
 ;
-
-anyword: TEXT
-       | WHITESPACES
-;
-*/
 
 anyword: TEXT
 ;
@@ -453,7 +407,11 @@ words: words anyword { $$ = strmerge($1,$2); }
      | anyword
 ;
 
-eol: EOL
+words2: words2 anywordurl { $$ = strmerge($1,$2); }
+      | anywordurl
+;
+
+eol: NEWLINE
    | EMPTYLINES
 ;
 
