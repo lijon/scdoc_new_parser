@@ -57,41 +57,41 @@ if (scdoc_start_token) {
 (?i:[ \t]*warning::[ \t\n]*)       return WARNING;
 (?i:[ \t]*note::[ \t\n]*)          return NOTE;
 
-(?i:link::[ \t]*)          BEGIN(verbatim); return LINK;
-(?i:anchor::[ \t]*)        BEGIN(verbatim); return ANCHOR;
-(?i:image::[ \t]*)         BEGIN(verbatim); return IMAGE;
-(?i:soft::[ \t\n]*)          BEGIN(verbatim); return SOFT;
-(?i:strong::[ \t\n]*)        BEGIN(verbatim); return STRONG;
-(?i:emphasis::[ \t\n]*)      BEGIN(verbatim); return EMPHASIS;
-(?i:code::[ \t]*)          BEGIN(verbatim); return CODE;
-(?i:teletype::[ \t]*)      BEGIN(verbatim); return TELETYPE;
-(?i:math::[ \t]*)          BEGIN(verbatim); return MATH;
+(?i:link::[ \t]*)           BEGIN(verbatim); return LINK;
+(?i:anchor::[ \t]*)         BEGIN(verbatim); return ANCHOR;
+(?i:image::[ \t]*)          BEGIN(verbatim); return IMAGE;
+(?i:soft::[ \t\n]*)         BEGIN(verbatim); return SOFT;
+(?i:strong::[ \t\n]*)       BEGIN(verbatim); return STRONG;
+(?i:emphasis::[ \t\n]*)     BEGIN(verbatim); return EMPHASIS;
+(?i:code::[ \t]*)           BEGIN(verbatim); return CODE;
+(?i:teletype::[ \t]*)       BEGIN(verbatim); return TELETYPE;
+(?i:math::[ \t]*)           BEGIN(verbatim); return MATH;
 
-(?i:[ \t]*code::[ \t]*\n+)          BEGIN(verbatim2); return CODEBLOCK;
-(?i:[ \t]*teletype::[ \t]*\n+)      BEGIN(verbatim2); return TELETYPEBLOCK;
-(?i:[ \t]*math::[ \t]*\n+)          BEGIN(verbatim2); return MATHBLOCK;
+(?i:[ \t]*code::[ \t]*\n+)      BEGIN(verbatim2); return CODEBLOCK;
+(?i:[ \t]*teletype::[ \t]*\n+)  BEGIN(verbatim2); return TELETYPEBLOCK;
+(?i:[ \t]*math::[ \t]*\n+)      BEGIN(verbatim2); return MATHBLOCK;
 
 <INITIAL,verbatim>[ \t\n]*::    BEGIN(0); return TAGSYM;
-<verbatim2>\n[ \t\n]*::           BEGIN(0); return TAGSYM;
-[ \t]*\|\|[ \t\n]*            return BARS;
-[ \t]*\#\#[ \t\n]*            return HASHES;
+<verbatim2>\n[ \t\n]*::         BEGIN(0); return TAGSYM;
+[ \t]*\|\|[ \t\n]*              return BARS;
+[ \t]*\#\#[ \t\n]*              return HASHES;
 
 <verbatim2>\n   scdoclval.str = strdup("\n"); return TEXT;
 <verbatim>\n+   scdoclval.str = strdup(" "); return TEXT;
-<INITIAL>\n              return EOL;
+<INITIAL>\n     return EOL;
 \n\n+           return EMPTYLINES;
 
-\\\|\|          scdoclval.str = strdup("||"); return TEXT;
-\\\#\#          scdoclval.str = strdup("##"); return TEXT;
-<INITIAL,verbatim>\\::         scdoclval.str = strdup("::"); return TEXT;
-<verbatim,verbatim2>\t    scdoclval.str = strdup("    "); return TEXT;
-[ \r\t]+        scdoclval.str = strdup(" "); return TEXT;
+\\\|\|                  scdoclval.str = strdup("||"); return TEXT;
+\\\#\#                  scdoclval.str = strdup("##"); return TEXT;
+<INITIAL,verbatim>\\::  scdoclval.str = strdup("::"); return TEXT;
+<verbatim,verbatim2>\t  scdoclval.str = strdup("    "); return TEXT;
+[ \r\t]+                scdoclval.str = strdup(" "); return TEXT;
 
-[a-zA-Z]+       |
-<*>[.,!?(){}\[\]'"0-9]+ |
+[a-zA-Z]+                       |
+<*>[.,!?(){}\[\]'"0-9]+         |
 <verbatim,verbatim2>[^:\\\t\n ]+ |
-[^:\\\n]        |
-<*>.            scdoclval.str = strdup(scdoctext); return TEXT;
+[^:\\\n]                        |
+<*>.                            scdoclval.str = strdup(scdoctext); return TEXT;
 
 %%
 

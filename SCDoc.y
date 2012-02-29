@@ -38,6 +38,8 @@ void scdocerror(const char *str)
 
 // merge a+b and free b
 char *strmerge(char *a, char *b) {
+    if(a==NULL) return b;
+    if(b==NULL) return a;
     char *s = (char *)realloc(a,strlen(a)+strlen(b)+1);
     strcat(s,b);
     free(b);
@@ -194,9 +196,8 @@ void node_dump(Node *n, int level, int last) {
 %token TAGSYM BARS HASHES
 // text and whitespace
 %token <str> TEXT
-%token <i> EOL EMPTYLINES
+%token EOL EMPTYLINES
 
-%type <i> eol
 %type <id> headtag sectiontag listtag rangetag tabletag inlinetag blocktag
 %type <str> anyword words anywordnl wordsnl
 %type <node> arg optreturns optdiscussion body bodyelem 
@@ -452,8 +453,8 @@ words: words anyword { $$ = strmerge($1,$2); }
      | anyword
 ;
 
-eol: EOL { $$ = 0; }
-   | EMPTYLINES { $$ = 1; }
+eol: EOL
+   | EMPTYLINES
 ;
 
 anywordnl: anyword
