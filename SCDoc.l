@@ -59,10 +59,10 @@ if (scdoc_start_token) {
 
 (?i:link::[ \t]*)          BEGIN(verbatim); return LINK;
 (?i:anchor::[ \t]*)        BEGIN(verbatim); return ANCHOR;
-(?i:soft::[ \t]*)          BEGIN(verbatim); return SOFT;
 (?i:image::[ \t]*)         BEGIN(verbatim); return IMAGE;
-(?i:strong::[ \t]*)        BEGIN(verbatim); return STRONG;
-(?i:emphasis::[ \t]*)      BEGIN(verbatim); return EMPHASIS;
+(?i:soft::[ \t\n]*)          BEGIN(verbatim); return SOFT;
+(?i:strong::[ \t\n]*)        BEGIN(verbatim); return STRONG;
+(?i:emphasis::[ \t\n]*)      BEGIN(verbatim); return EMPHASIS;
 (?i:code::[ \t]*)          BEGIN(verbatim); return CODE;
 (?i:teletype::[ \t]*)      BEGIN(verbatim); return TELETYPE;
 (?i:math::[ \t]*)          BEGIN(verbatim); return MATH;
@@ -73,11 +73,12 @@ if (scdoc_start_token) {
 
 <INITIAL,verbatim>[ \t\n]*::    BEGIN(0); return TAGSYM;
 <verbatim2>\n[ \t\n]*::           BEGIN(0); return TAGSYM;
-[ \t\n]*\|\|[ \t\n]*            return BARS;
-[ \t\n]*\#\#[ \t\n]*            return HASHES;
+[ \t]*\|\|[ \t\n]*            return BARS;
+[ \t]*\#\#[ \t\n]*            return HASHES;
 
 <verbatim2>\n   scdoclval.str = strdup("\n"); return TEXT;
-<INITIAL,verbatim>\n              return EOL;
+<verbatim>\n+   scdoclval.str = strdup(" "); return TEXT;
+<INITIAL>\n              return EOL;
 \n\n+           return EMPTYLINES;
 
 \\\|\|          scdoclval.str = strdup("||"); return TEXT;

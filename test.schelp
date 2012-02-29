@@ -98,3 +98,12 @@ table::
 
 classtree:: FooBar
 
+section:: Test123
+
+strong::
+This whole paragraph
+will be in strong text.
+
+ok?
+::
+

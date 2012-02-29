@@ -20,16 +20,20 @@ note: PROSE means insert <p>  (but maybe not in list items etc?)
 
 int scdocparse();
 int scdoclex();
+void scdocrestart (FILE *input_file  );
+//YY_BUFFER_STATE scdoc_scan_string(const char *str);
+
 extern int scdoclineno;
 extern char *scdoctext;
 extern int scdoc_start_token;
 
 static const char * method_type = NULL;
 
+static Node * topnode;
+
 void scdocerror(const char *str)
 {
     fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,scdoctext);
-    exit(1);
 }
 
 // merge a+b and free b
@@ -193,7 +197,7 @@ void node_dump(Node *n, int level, int last) {
 %token <i> EOL EMPTYLINES
 
 %type <i> eol
-%type <id> headtag sectiontag singletag listtag rangetag tabletag inlinetag blocktag
+%type <id> headtag sectiontag listtag rangetag tabletag inlinetag blocktag
 %type <str> anyword words anywordnl wordsnl
 %type <node> arg optreturns optdiscussion body bodyelem 
 %type <node> optsubsections optsubsubsections methodbody  
@@ -214,7 +218,7 @@ document: START_FULL dochead optsections
         node_add_child(n, $2);
         node_add_child(n, $3);
         node_fixup_tree(n);
-        node_dump(n,0,1);
+        topnode = n;
     }
        | START_PARTIAL sections
     {
@@ -352,7 +356,7 @@ bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | listtag listbody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | tabletag tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
-        | singletag words eol { $$ = node_make($1,$2,NULL); }
+        | CLASSTREE words eol { $$ = node_make("CLASSTREE",$2,NULL); }
         | EMPTYLINES { $$ = NULL; }
         | IMAGE words TAGSYM { $$ = node_make("IMAGE",$2,NULL); }
         ;
@@ -364,6 +368,7 @@ prose: prose proseelem { $$ = node_add_child($1, $2); }
 proseelem: // words { $$ = node_make("TEXT",$1,NULL); } // 2 shift/reduce conflicts
            anyword { $$ = node_make("TEXT",$1,NULL); } // one TEXT for each word
          | inlinetag words TAGSYM { $$ = node_make($1,$2,NULL); }
+         | KEYWORD words eol { $$ = node_make("KEYWORD",$2,NULL); }
          | FOOTNOTE body TAGSYM { $$ = node_make("FOOTNOTE",NULL,$2); }
          | EOL { $$ = node_create("NL"); }
          ;
@@ -392,9 +397,9 @@ blocktag: CODEBLOCK { $$ = "CODEBLOCK"; }
         | MATHBLOCK { $$ = "MATHBLOCK"; }
 ;
 
-singletag: CLASSTREE { $$ = "CLASSTREE"; }
-         | KEYWORD { $$ = "KEYWORD"; }
-;
+//singletag: CLASSTREE { $$ = "CLASSTREE"; }
+//         | KEYWORD { $$ = "KEYWORD"; }
+//;
 
 
 listtag: LIST { $$ = "LIST"; }
@@ -461,12 +466,56 @@ wordsnl: wordsnl anywordnl { $$ = strmerge($1,$2); }
 
 %%
 
+static Node * scdoc_parse_run(int partial) {
+    scdoc_start_token = partial? START_PARTIAL : START_FULL;
+    topnode = NULL;
+    method_type = "METHOD";
+    if(scdocparse()!=0) {
+        return NULL;
+    }
+    return topnode;
+}
+
+Node * scdoc_parse_file(char *fn, int partial) {
+    FILE *fp;
+    Node *n;
+    
+    fp = fopen(fn,"r");
+    if(!fp) {
+        fprintf(stderr, "scdoc_parse_file: could not open '%s'\n",fn);
+        return NULL;
+    }
+    scdocrestart(fp);
+    n = scdoc_parse_run(partial);
+    if(!n) {
+        fprintf(stderr, "%s: parse error\n",fn);
+    }
+    fclose(fp);
+    return n;
+}
+
+/*Node * scdoc_parse_string(char *str, int partial) {
+    YY_BUFFER_STATE x = scdoc_scan_string(str);
+    Node *n = scdoc_parse_run(partial);
+    yy_delete_buffer(x);
+    return n;
+}*/
+
 int main(int argc, char **argv)
 {
-    method_type = "METHOD";
-    scdoc_start_token = START_FULL;
-    if(argc>1 && strcmp(argv[1],"--partial")==0)
-        scdoc_start_token = START_PARTIAL;
-    scdocparse();
+    if(argc>1) {
+        Node *n;
+        if(argc>2 && strcmp(argv[1],"--partial")==0)
+            n = scdoc_parse_file(argv[2], 1);
+        else
+            n = scdoc_parse_file(argv[1], 0);
+        if(n)
+            node_dump(n,0,1);
+        else
+            return 1;
+    } else {
+        fprintf(stderr, "Usage: %s inputfile.schelp\n",argv[0]);
+    }
+    return 0;
 }
 
