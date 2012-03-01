@@ -1,0 +1,128 @@
+- precise syntax for comma-separated lists (method::, keyword::, private::, related::, categories::, etc)
+  perhaps even more precise for methods?
+  we don't have ',' as a token so it might be better to do this in node_fixup_tree(),
+  where we could convert *text to **args and n_args,
+  and also check that cmethods and imethods does not have any "(argument list..)"
+  otoh, we could add a COMMA token and let anyword = TEXT | COMMA
+  then add each list entry as a child.
+
+- should we deprecate class:: and just use title::?
+  or do we need a way to mark the actual doc that it's a class ref and not a normal doc?
+  we could use only title:: but add an isClass boolean to the SCDocument struct,
+  which is set by the parser if the path starts with "Classes/".
+  the parser could take basedir and path as separate args.
+
+- replace node->children with a linked list (node->next and node->tail)
+  instead of realloc'ing? same for text strings instead of using strmerge?
+
+- private:: now counts as a subsection (like method:: and copymethod::)
+  this means it is a section that can't have any text in it, meaning it needs
+  to come after any section text.
+  an alternative would be to use the syntax: class/instancemethods optprivate subsections
+  but that would mean it *must* come right after the class/instancemethods section header.
+
+- keyword:: is problematic.
+  currently it's a proseelem, which means it can be intermingled with ordinary text,
+  and inside lists, etc.  but since it's eol terminated, it eats EMPTYLINES and make
+  it impossible to have a paragraph break right after it.
+  making it a blockelem means it cannot go inside lists, etc. so that's not an option.
+  best is probably to change the syntax to keyword::word::, similar to anchor::
+  then it could take an optional text, keyword::word#text:: or perhaps just
+  let it render word, and add another keywords:: header tag?
+  but one might want to use it for section text, which would not work since sectiontext
+  can't contain tags. so keyword::word#optionaltext:: might be the trick.
+
+- integrate with sclang and make a primitive that returns the document tree
+    SCDocument:
+      root
+      title
+      summary
+      categories[]
+      isClass
+      related[]
+      redirect
+
+    where root is an SCDocNode:
+      type
+      text
+      children[]
+
+
+- make a new renderer also in C?
+  integrated with sclang that can access the introspection data (classtree and methods).
+  it could use the docnode tree directly from the parser instead of going through sclang objects
+
+- or, let both parser and renderer be standalone.
+  * introspection data could be provided by a machine-readable file written by sclang
+    - class tree, their methods, the filenameSymbol for each class and method.
+    
+    C classname
+        F filenameSymbol
+        CM methodname
+            F filenameSymbol
+            A name defaultvalue
+            A etc...
+        XM
+        IM methodname
+            etc...
+        XM
+        C subclassname
+            etc...
+        XC
+    XC
+    
+  but then we need also an output mode that generates sclang code for docmap construction.
+  scdoc_parse --metadata <filename>
+  it could then write this metadata on stdout..
+  (  
+     title: "the title",
+     summary: "summary",
+     categories: ["category1","category2",],
+     related: ["path1","path2",],
+     methods: ["meth1","meth2",],
+     keywords: ["kw1","kw2",]
+  )
+
+- even make the whole scdoc thing in C?
+  * find all helpsource files and render if newer than html target
+  * copy any other files as is
+  * write docmap.json and/or docmap.scd for sclang interface, needed by find-help-for-string, etc.
+
+  * docmap is also needed internally by scdoc renderer:
+  - document title for links
+  - class summary for classtree::
+  We could have a mode to only parse the header, and run this first to create the initial docmap.
+  then when we parse all docs fully, the other metadata would be filled in (documented methods, keywords, etc)
+
+  * it should be fast enough to render all updated files at startup
+  * the process can run in background with .unixCmd, with an action to set helpAvailable=true
+
+...
+real plans:
+
+1. make a Document struct and parse header data into this, on C side
+
+2. parser primitive that returns a SCDocument tree with SCDocNode's
+   it should take these arguments:
+        basedir - the basedir, like SCDoc.helpSourceDir
+        subpath - path to schelp file relative basedir
+        mode    - 0: full, 1: partial, 2: metadata
+        
+        metadata mode means it only returns the header data:
+            title, summary, categories, related, redirect
+        and the nodes needed for metadata:
+            method, cmethod, imethod, private, keyword, copymethod
+            
+        note: the current implementation also adds undocumented methods when
+        it's a class. we need to do this on the lang-side.
+
+3. rewrite SCDoc, SCDocRenderer and SCDocParser to use this.
+   special considerations in SCDocParser:
+        merge, getMethodDoc, generateUndocumentedMethods, etc.
+
+        (should any of these methods be implemented on C side?)
+
+        note that we insert undocumented methods already in the document tree,
+        while other introspection data is inserted at rendertime.
+...
+
