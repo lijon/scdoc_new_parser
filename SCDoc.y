@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <ctype.h>
 #include "SCDoc.h"
 
 int scdocparse();
@@ -27,15 +26,6 @@ void scdocerror(const char *str)
     fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,text);
     free(text);
 }
-
-static char *striptrailingws(char *s) {
-    char *s2 = strchr(s,0);
-    while(--s2 > s && isspace(*s2)) {
-        *s2 = 0;
-    }
-    return s;
-}
-
 
 %}
 %locations
@@ -98,7 +88,7 @@ dochead: dochead headline { $$ = node_add_child($1,$2); }
        | headline { $$ = node_make("HEADER",NULL,$1); }
 ;
 
-headline: headtag words2 eol { $$ = node_make($1,striptrailingws($2),NULL); }
+headline: headtag words2 eol { $$ = node_make($1,$2,NULL); }
         | CATEGORIES commalist eol { $$ = node_make_take_children("CATEGORIES",NULL,$2); }
         | RELATED commalist eol { $$ = node_make_take_children("RELATED",NULL,$2); }
 ;

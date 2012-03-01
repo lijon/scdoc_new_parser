@@ -1,11 +1,3 @@
-- precise syntax for comma-separated lists (method::, keyword::, private::, related::, categories::, etc)
-  perhaps even more precise for methods?
-  we don't have ',' as a token so it might be better to do this in node_fixup_tree(),
-  where we could convert *text to **args and n_args,
-  and also check that cmethods and imethods does not have any "(argument list..)"
-  otoh, we could add a COMMA token and let anyword = TEXT | COMMA
-  then add each list entry as a child.
-
 - should we deprecate class:: and just use title::?
   or do we need a way to mark the actual doc that it's a class ref and not a normal doc?
   we could use only title:: but add an isClass boolean to the SCDocument struct,
@@ -31,6 +23,8 @@
   let it render word, and add another keywords:: header tag?
   but one might want to use it for section text, which would not work since sectiontext
   can't contain tags. so keyword::word#optionaltext:: might be the trick.
+
+  we could use another lexer start condition, verbatim3, that returns TEXT until a single eol?
 
 - integrate with sclang and make a primitive that returns the document tree
     SCDocument:

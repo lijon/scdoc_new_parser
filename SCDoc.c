@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "SCDoc.h"
 
 Node * scdoc_parse_run(int partial);
@@ -15,6 +16,14 @@ char *strmerge(char *a, char *b) {
     char *s = (char *)realloc(a,strlen(a)+strlen(b)+1);
     strcat(s,b);
     free(b);
+    return s;
+}
+
+static char *striptrailingws(char *s) {
+    char *s2 = strchr(s,0);
+    while(--s2 > s && isspace(*s2)) {
+        *s2 = 0;
+    }
     return s;
 }
 
@@ -84,6 +93,9 @@ Node * node_make_take_children(const char *id, char *text, Node *src) {
 
 void node_fixup_tree(Node *n) {
     int i;
+    if(n->text) {
+        n->text = striptrailingws(n->text);
+    }
     if(n->n_childs) {
         Node *last = n->children[n->n_childs-1];
         if(last->id=="NL") {
