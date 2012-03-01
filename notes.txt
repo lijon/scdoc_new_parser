@@ -25,6 +25,9 @@
   can't contain tags. so keyword::word#optionaltext:: might be the trick.
 
   we could use another lexer start condition, verbatim3, that returns TEXT until a single eol?
+  nope, then it missing the EMPTYLINES. tried putting back the \n with yymore() or yyless(1)
+  but it didn't work, perhaps because we switch start condition at the same time?
+  in any case, that would be a hack..
 
 - integrate with sclang and make a primitive that returns the document tree
     SCDocument:

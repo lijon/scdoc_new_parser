@@ -99,7 +99,7 @@ table::
 ::
 
 classtree:: FooBar
-
+Some text..
 section:: Test123
 
 strong::
@@ -110,8 +110,7 @@ ok?
 ::
 
 See footnote::website http://kymatica.com:: for more info.
-keyword:: something
+keyword:: something funny, something nice
 
 see strong::http://kymatica.com/foo::, for more info
 link::a:: link::b::
-

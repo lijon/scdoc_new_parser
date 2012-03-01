@@ -12,7 +12,9 @@ int scdoc_start_token = 0;
 
 %x verbatim
 %x verbatim2
+
 %%
+
 %{
 
 if (scdoc_start_token) {
@@ -78,7 +80,7 @@ if (scdoc_start_token) {
 
 <verbatim2>\n   scdoclval.str = strdup("\n"); return TEXT;
 <verbatim>\n+   scdoclval.str = strdup(" "); return TEXT;
-<INITIAL>\n     return NEWLINE;
+\n              return NEWLINE;
 \n([ \t]*\n)+           return EMPTYLINES;
 
 [ \t]*,[ \t]*           scdoclval.str = strdup(scdoctext); return COMMA;
