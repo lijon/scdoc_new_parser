@@ -21,7 +21,11 @@ static Node * topnode;
 
 void scdocerror(const char *str)
 {
-    fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,scdoctext);
+    char *text = strdup(scdoctext);
+    char *eol = strchr(text, '\n');
+    if(eol) *eol = '\0';
+    fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,text);
+    free(text);
 }
 
 // merge a+b and free b
@@ -454,7 +458,7 @@ Node * scdoc_parse_file(char *fn, int partial) {
     scdocrestart(fp);
     n = scdoc_parse_run(partial);
     if(!n) {
-        fprintf(stderr, "%s: parse error\n",fn);
+        fprintf(stderr, "    In file: %s\n",fn);
     }
     fclose(fp);
     return n;
