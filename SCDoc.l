@@ -81,13 +81,15 @@ if (scdoc_start_token) {
 <INITIAL>\n     return NEWLINE;
 \n([ \t]*\n)+           return EMPTYLINES;
 
+[ \t]*,[ \t]*           scdoclval.str = strdup(scdoctext); return COMMA;
+
 \\\|\|                  scdoclval.str = strdup("||"); return TEXT;
 \\\#\#                  scdoclval.str = strdup("##"); return TEXT;
 <INITIAL,verbatim>\\::  scdoclval.str = strdup("::"); return TEXT;
 <verbatim,verbatim2>\t  scdoclval.str = strdup("    "); return TEXT;
 [ \r\t]+                scdoclval.str = strdup(" "); return TEXT;
 
-[a-zA-Z]+:\/\/[^ \t\n:]+        scdoclval.str = strdup(scdoctext); return URL;
+[a-zA-Z]+:\/\/[^ \t\n:,]+       scdoclval.str = strdup(scdoctext); return URL;
 [a-zA-Z]+                       |
 <*>[.,!?(){}\[\]'"0-9]+         |
 <verbatim,verbatim2>[^:\\\t\n ]+ |

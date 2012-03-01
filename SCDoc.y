@@ -183,17 +183,17 @@ void node_dump(Node *n, int level, int last) {
 // symbols
 %token TAGSYM BARS HASHES
 // text and whitespace
-%token <str> TEXT URL
+%token <str> TEXT URL COMMA
 %token NEWLINE EMPTYLINES
 
 %type <id> headtag sectiontag listtag rangetag tabletag inlinetag blocktag
-%type <str> anyword words anywordnl wordsnl anywordurl words2
+%type <str> anyword words anywordnl wordsnl anywordurl words2 nocommawords
 %type <node> arg optreturns optdiscussion body bodyelem 
 %type <node> optsubsections optsubsubsections methodbody  
 %type <node> dochead headline optsections sections section
 %type <node> subsections subsection subsubsection subsubsections
 %type <node> optbody optargs args listbody tablebody tablecells tablerow
-%type <node> prose proseelem blockA blockB
+%type <node> prose proseelem blockA blockB commalist
 
 %token START_FULL START_PARTIAL
 
@@ -222,13 +222,13 @@ dochead: dochead headline { $$ = node_add_child($1,$2); }
 ;
 
 headline: headtag words2 eol { $$ = node_make($1,striptrailingws($2),NULL); }
+        | CATEGORIES commalist eol { $$ = node_make_take_children("CATEGORIES",NULL,$2); }
+        | RELATED commalist eol { $$ = node_make_take_children("RELATED",NULL,$2); }
 ;
 
 headtag: CLASS { $$ = "CLASS"; }
        | TITLE { $$ = "TITLE"; }
        | SUMMARY { $$ = "SUMMARY"; }
-       | RELATED { $$ = "RELATED"; }
-       | CATEGORIES { $$ = "CATEGORIES"; }
        | REDIRECT { $$ = "REDIRECT"; }
 ;
 
@@ -274,7 +274,7 @@ subsubsections: subsubsections subsubsection { $$ = node_add_child($1,$2); }
 
 subsubsection: METHOD words eol methodbody { $$ = node_make_take_children(method_type,$2,$4); }
              | COPYMETHOD words eol { $$ = node_make("COPYMETHOD",$2,NULL); }
-             | PRIVATE words eol { $$ = node_make("PRIVATE",$2,NULL); }
+             | PRIVATE commalist eol { $$ = node_make_take_children("PRIVATE",NULL,$2); }
 ;
 
 methodbody: optbody optargs optreturns optdiscussion
@@ -310,10 +310,6 @@ optdiscussion: DISCUSSION body { $$ = node_make_take_children("DISCUSSION",NULL,
              | { $$ = NULL; }
 ;
 
-//body: body bodyelem { $$ = node_add_child($1,$2); }
-//    | bodyelem { $$ = node_make("(SECTIONBODY)",NULL,$1); }
-//    ;
-
 /*
 body contains a list of bodyelem's (A) and prose (B) such that
 the list can start and end with either A or B, and A can repeat while B can not
@@ -348,7 +344,7 @@ prose: prose proseelem { $$ = node_add_child($1, $2); }
 proseelem: anyword { $$ = node_make("TEXT",$1,NULL); } // one TEXT for each word
          | URL { $$ = node_make("LINK",$1,NULL); }
          | inlinetag words TAGSYM { $$ = node_make($1,$2,NULL); }
-         | KEYWORD words eol { $$ = node_make("KEYWORD",$2,NULL); }
+         | KEYWORD commalist eol { $$ = node_make_take_children("KEYWORD",NULL,$2); }
          | FOOTNOTE body TAGSYM { $$ = node_make_take_children("FOOTNOTE",NULL,$2); }
          | NEWLINE { $$ = node_create("NL"); }
          ;
@@ -396,11 +392,12 @@ tablecells: tablecells BARS optbody { $$ = node_add_child($1, node_make_take_chi
           | optbody { $$ = node_make("(TABLECELLS)",NULL, node_make_take_children("TABCOL",NULL,$1)); }
 ;
 
-anywordurl: TEXT
+anywordurl: anyword
           | URL
 ;
 
 anyword: TEXT
+       | COMMA
 ;
 
 words: words anyword { $$ = strmerge($1,$2); }
@@ -421,6 +418,16 @@ anywordnl: anyword
 
 wordsnl: wordsnl anywordnl { $$ = strmerge($1,$2); }
        | anywordnl
+;
+
+nocommawords: nocommawords TEXT { $$ = strmerge($1,$2); }
+            | nocommawords URL  { $$ = strmerge($1,$2); }
+            | TEXT
+            | URL
+;
+
+commalist: commalist COMMA nocommawords { free($2); $$ = node_add_child($1,node_make("STRING",$3,NULL)); }
+         | nocommawords { $$ = node_make("(COMMALIST)",NULL,node_make("STRING",$1,NULL)); }
 ;
 
 %%

@@ -1,6 +1,7 @@
 title:: This is my title! 
 summary:: And some summary..
-related:: http://kymatica.com, Classes/FooBar
+related:: Hejsan, http://kymatica.com, Classes/FooBar
+categories:: Foo>bar,Some>Nice>Category
 
 method:: test
 hmm
@@ -11,8 +12,8 @@ link::foo::: hmm
 
 See (link::bar##classtree::) for more info.
 
-section:: My section
-This is some prose..
+section:: My section, hello
+This is some prose,
 With two lines..
 
 And here:
@@ -52,7 +53,7 @@ second arg
 
 discussion::
 blah blah...
-private:: prInit
+private:: prInit, hiddenMethod
 copymethod:: Classes/SinOsc *ar
 
 method:: zoo
@@ -112,5 +113,5 @@ See footnote::website http://kymatica.com:: for more info.
 keyword:: something
 
 
-see strong::http://kymatica.com/foo:: for more info
+see strong::http://kymatica.com/foo::, for more info
 
