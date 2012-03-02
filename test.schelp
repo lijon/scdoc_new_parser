@@ -98,6 +98,12 @@ table::
 ## 4 || 5 || a    b			c  strong::6 + 5::
 ::
 
+definitionlist::
+## keyword:: foo
+Foo ||
+Description..
+::
+
 classtree:: FooBar
 Some text..
 section:: Test123
@@ -110,7 +116,7 @@ ok?
 ::
 
 See footnote::website http://kymatica.com:: for more info.
-keyword:: something funny, something nice
 
+keyword:: something funny, something nice
 see strong::http://kymatica.com/foo::, for more info
 link::a:: link::b::

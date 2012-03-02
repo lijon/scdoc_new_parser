@@ -200,6 +200,7 @@ bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | tabletag tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
         | CLASSTREE words eol { $$ = node_make("CLASSTREE",$2,NULL); }
+        | KEYWORD commalist eol { $$ = node_make_take_children("KEYWORD",NULL,$2); }
         | EMPTYLINES { $$ = NULL; }
         | IMAGE words2 TAGSYM { $$ = node_make("IMAGE",$2,NULL); }
         ;
@@ -211,7 +212,6 @@ prose: prose proseelem { $$ = node_add_child($1, $2); }
 proseelem: anyword { $$ = node_make("TEXT",$1,NULL); } // one TEXT for each word
          | URL { $$ = node_make("LINK",$1,NULL); }
          | inlinetag words TAGSYM { $$ = node_make($1,$2,NULL); }
-         | KEYWORD commalist eol { $$ = node_make_take_children("KEYWORD",NULL,$2); }
          | FOOTNOTE body TAGSYM { $$ = node_make_take_children("FOOTNOTE",NULL,$2); }
          | NEWLINE { $$ = node_create("NL"); }
          ;

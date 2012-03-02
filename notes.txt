@@ -13,22 +13,6 @@
   an alternative would be to use the syntax: class/instancemethods optprivate subsections
   but that would mean it *must* come right after the class/instancemethods section header.
 
-- keyword:: is problematic.
-  currently it's a proseelem, which means it can be intermingled with ordinary text,
-  and inside lists, etc.  but since it's eol terminated, it eats EMPTYLINES and make
-  it impossible to have a paragraph break right after it.
-  making it a blockelem means it cannot go inside lists, etc. so that's not an option.
-  best is probably to change the syntax to keyword::word::, similar to anchor::
-  then it could take an optional text, keyword::word#text:: or perhaps just
-  let it render word, and add another keywords:: header tag?
-  but one might want to use it for section text, which would not work since sectiontext
-  can't contain tags. so keyword::word#optionaltext:: might be the trick.
-
-  we could use another lexer start condition, verbatim3, that returns TEXT until a single eol?
-  nope, then it missing the EMPTYLINES. tried putting back the \n with yymore() or yyless(1)
-  but it didn't work, perhaps because we switch start condition at the same time?
-  in any case, that would be a hack..
-
 - integrate with sclang and make a primitive that returns the document tree
     SCDocument:
       root
