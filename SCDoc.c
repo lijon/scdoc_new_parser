@@ -7,6 +7,8 @@
 Node * scdoc_parse_run(int partial);
 void scdocrestart (FILE *input_file);
 
+char * scdoc_current_file = NULL;
+
 static int node_dump_level_done[32] = {0,};
 
 // merge a+b and free b
@@ -159,20 +161,20 @@ void node_dump(Node *n) {
 Node * scdoc_parse_file(char *fn, int partial) {
     FILE *fp;
     Node *n;
-    
+
     fp = fopen(fn,"r");
     if(!fp) {
         fprintf(stderr, "scdoc_parse_file: could not open '%s'\n",fn);
         return NULL;
     }
+    scdoc_current_file = fn;
     scdocrestart(fp);
     n = scdoc_parse_run(partial);
     if(n) {
         node_fixup_tree(n);
-    } else {
-        fprintf(stderr, "    In file: %s\n",fn);
     }
     fclose(fp);
+    scdoc_current_file = NULL;
     return n;
 }
 

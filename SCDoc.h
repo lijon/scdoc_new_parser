@@ -18,4 +18,6 @@ Node * node_create(const char *id);
 Node * scdoc_parse_file(char *fn, int partial);
 void node_dump(Node *n);
 
+extern char * scdoc_current_file;
+
 #endif

@@ -23,7 +23,7 @@ void scdocerror(const char *str)
     char *text = strdup(scdoctext);
     char *eol = strchr(text, '\n');
     if(eol) *eol = '\0';
-    fprintf(stderr, "%s.\n    At line %d: '%s'\n",str,scdoclineno,text);
+    fprintf(stderr, "In %s:\n  %s\n  At line %d: %s\n\n",scdoc_current_file,str,scdoclineno,text);
     free(text);
 }
 
@@ -55,7 +55,7 @@ void scdocerror(const char *str)
 %token <str> TEXT URL COMMA
 %token NEWLINE EMPTYLINES
 
-%type <id> headtag sectiontag listtag rangetag tabletag inlinetag blocktag
+%type <id> headtag sectiontag listtag rangetag inlinetag blocktag
 %type <str> anyword words anywordnl wordsnl anywordurl words2 nocommawords
 %type <node> arg optreturns optdiscussion body bodyelem 
 %type <node> optsubsections optsubsubsections methodbody  
@@ -63,6 +63,7 @@ void scdocerror(const char *str)
 %type <node> subsections subsection subsubsection subsubsections
 %type <node> optbody optargs args listbody tablebody tablecells tablerow
 %type <node> prose proseelem blockA blockB commalist
+%type <node> deflistbody deflistrow defterms
 
 %token START_FULL START_PARTIAL
 
@@ -197,7 +198,8 @@ blockB: blockA prose { $$ = node_add_child($1,$2); }
 
 bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
         | listtag listbody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
-        | tabletag tablebody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
+        | TABLE tablebody TAGSYM { $$ = node_make_take_children("TABLE",NULL,$2); }
+        | DEFINITIONLIST deflistbody TAGSYM { $$ = node_make_take_children("DEFINITIONLIST",NULL,$2); }
         | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
         | CLASSTREE words eol { $$ = node_make("CLASSTREE",$2,NULL); }
         | KEYWORD commalist eol { $$ = node_make_take_children("KEYWORD",NULL,$2); }
@@ -236,10 +238,6 @@ listtag: LIST { $$ = "LIST"; }
        | NUMBEREDLIST { $$ = "NUMBEREDLIST"; }
 ;
        
-tabletag: DEFINITIONLIST { $$ = "DEFINITIONLIST"; }
-        | TABLE { $$ = "TABLE"; }
-;
-
 rangetag: WARNING { $$ = "WARNING"; }
         | NOTE { $$ = "NOTE"; }
 ;
@@ -257,6 +255,21 @@ tablebody: tablebody tablerow { $$ = node_add_child($1,$2); }
 
 tablecells: tablecells BARS optbody { $$ = node_add_child($1, node_make_take_children("TABCOL",NULL,$3)); }
           | optbody { $$ = node_make("(TABLECELLS)",NULL, node_make_take_children("TABCOL",NULL,$1)); }
+;
+
+defterms: defterms HASHES body { $$ = node_add_child($1,node_make_take_children("TERM",NULL,$3)); }
+        | HASHES body { $$ = node_make("(TERMS)",NULL,node_make_take_children("TERM",NULL,$2)); }
+;
+
+deflistrow: defterms BARS optbody
+    {
+        $$ = node_make_take_children("DEFLISTITEM", NULL, $1);
+        node_add_child($$, node_make_take_children("DEFINITION", NULL, $3));
+    }
+;
+
+deflistbody: deflistbody deflistrow { $$ = node_add_child($1,$2); }
+           | deflistrow { $$ = node_make("(DEFLISTBODY)",NULL,$1); }
 ;
 
 anywordurl: anyword

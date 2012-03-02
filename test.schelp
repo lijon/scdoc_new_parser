@@ -2,6 +2,8 @@ title:: This is my title!
 summary:: And some summary..
 related:: Hejsan, http://kymatica.com, Classes/FooBar
 categories:: Foo>bar,Some>Nice>Category
+keyword:: foo, bar, zoo
+keyword:: hello there
 
 method:: test
 hmm
@@ -100,8 +102,11 @@ table::
 
 definitionlist::
 ## keyword:: foo
-Foo ||
-Description..
+Foo
+|| Description..
+## Bar
+## Zoo
+|| Another emphasis::description::
 ::
 
 classtree:: FooBar
