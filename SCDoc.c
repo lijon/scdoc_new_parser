@@ -93,6 +93,16 @@ Node * node_make_take_children(const char *id, char *text, Node *src) {
     return n;
 }
 
+void node_free_tree(Node *n) {
+    int i;
+    free(n->text);
+    for(i=0;i<n->n_childs;i++) {
+        node_free_tree(n->children[i]);
+    }
+    free(n->children);
+    free(n);
+}
+
 void node_fixup_tree(Node *n) {
     int i;
     if(n->text) {

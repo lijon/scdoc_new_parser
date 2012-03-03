@@ -12,9 +12,10 @@ int main(int argc, char **argv)
             n = scdoc_parse_file(argv[2], 1);
         else
             n = scdoc_parse_file(argv[1], 0);
-        if(n)
+        if(n) {
             node_dump(n);
-        else
+            node_free_tree(n);
+        } else
             return 1;
     } else {
         fprintf(stderr, "Usage: %s inputfile.schelp\n",argv[0]);
