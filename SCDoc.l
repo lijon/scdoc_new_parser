@@ -5,11 +5,13 @@
 #include "SCDoc.tab.h"
 
 int scdoc_start_token = 0;
+//int colnum;
+//#define YY_USER_ACTION { scdoclloc.first_column = colnum; colnum=colnum+yyleng; scdoclloc.last_column=colnum; if(scdoclloc.first_line!=yylineno) colnum=1; scdoclloc.first_line = scdoclloc.last_line = yylineno;}
 
 %}
 
-%option yylineno noyywrap never-interactive nounistd
-
+%option noyywrap never-interactive nounistd
+%option yylineno
 %x verbatim
 %x verbatim2
 
@@ -20,6 +22,7 @@ int scdoc_start_token = 0;
 if (scdoc_start_token) {
     int t = scdoc_start_token;
     scdoc_start_token = 0;
+//    colnum = 1;
     return t;
 }
 

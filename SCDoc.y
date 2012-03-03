@@ -5,27 +5,20 @@
 #include <stdlib.h>
 #include "SCDoc.h"
 
-int scdocparse();
-int scdoclex();
+//#define YYLEX_PARAM &yylval, &yylloc
 
-//YY_BUFFER_STATE scdoc_scan_string(const char *str);
+int scdocparse();
 
 extern int scdoclineno;
 extern char *scdoctext;
 extern int scdoc_start_token;
+//extern struct YYLTYPE scdoclloc;
 
 static const char * method_type = NULL;
 
 static Node * topnode;
 
-void scdocerror(const char *str)
-{
-    char *text = strdup(scdoctext);
-    char *eol = strchr(text, '\n');
-    if(eol) *eol = '\0';
-    fprintf(stderr, "In %s:\n  %s\n  At line %d: %s\n\n",scdoc_current_file,str,scdoclineno,text);
-    free(text);
-}
+void scdocerror(const char *str);
 
 %}
 %locations
@@ -68,6 +61,11 @@ void scdocerror(const char *str)
 %token START_FULL START_PARTIAL
 
 %start document
+
+%{
+//int scdoclex (YYSTYPE * yylval_param, struct YYLTYPE * yylloc_param );
+int scdoclex (void);
+%}
 
 %%
 
@@ -322,5 +320,14 @@ Node * scdoc_parse_run(int partial) {
     return topnode;
 }
 
-
+void scdocerror(const char *str)
+{
+// FIXME: save current line in buffer so we can display it here?
+//    char *text = strdup(scdoctext);
+//    char *eol = strchr(text, '\n');
+//    if(eol) *eol = '\0';
+//    fprintf(stderr, "In %s:\n  %s\n  At line %d, col %d-%d: '%s'\n\n",scdoc_current_file,str,scdoclineno,scdoclloc.first_column,scdoclloc.last_column,text);
+    fprintf(stderr, "In %s:\n  At line %d: %s\n\n",scdoc_current_file,scdoclineno,str);
+//    free(text);
+}
 
