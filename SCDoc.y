@@ -50,8 +50,8 @@ void scdocerror(const char *str);
 
 %type <id> headtag sectiontag listtag rangetag inlinetag blocktag
 %type <str> anyword words anywordnl wordsnl anywordurl words2 nocommawords
-%type <node> arg optreturns optdiscussion body bodyelem 
-%type <node> optsubsections optsubsubsections methodbody  
+%type <node> document arg optreturns optdiscussion body bodyelem
+%type <node> optsubsections optsubsubsections methodbody
 %type <node> dochead headline optsections sections section
 %type <node> subsections subsection subsubsection subsubsections
 %type <node> optbody optargs args listbody tablebody tablecells tablerow
@@ -60,7 +60,10 @@ void scdocerror(const char *str);
 
 %token START_FULL START_PARTIAL
 
-%start document
+%start start
+
+%destructor { printf("destructing Node %s\n",$$->id); node_free_tree($$); } <node>
+%destructor { printf("destructing String '%s'\n",$$); free($$); } <str>
 
 %{
 //int scdoclex (YYSTYPE * yylval_param, struct YYLTYPE * yylloc_param );
@@ -69,17 +72,19 @@ int scdoclex (void);
 
 %%
 
+start: document { topnode = $1; }
+     | document error { topnode = NULL; node_free_tree($1); }
+     ;
+
 document: START_FULL dochead optsections
     {
-        Node *n = node_create("DOCUMENT");
-        node_add_child(n, $2);
-        node_add_child(n, $3);
-        topnode = n;
+        $$ = node_create("DOCUMENT");
+        node_add_child($$, $2);
+        node_add_child($$, $3);
     }
        | START_PARTIAL sections
     {
-        Node *n = node_make_take_children("BODY",NULL,$2);
-        topnode = n;
+        $$ = node_make_take_children("BODY",NULL,$2);
     }
 ;
 

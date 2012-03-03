@@ -6,6 +6,7 @@
 
 Node * scdoc_parse_run(int partial);
 void scdocrestart (FILE *input_file);
+int scdoclex_destroy(void);
 
 char * scdoc_current_file = NULL;
 
@@ -95,6 +96,7 @@ Node * node_make_take_children(const char *id, char *text, Node *src) {
 
 void node_free_tree(Node *n) {
     int i;
+//    printf("freeing %s\n",n->id);
     free(n->text);
     for(i=0;i<n->n_childs;i++) {
         node_free_tree(n->children[i]);
@@ -111,7 +113,7 @@ void node_fixup_tree(Node *n) {
     if(n->n_childs) {
         Node *last = n->children[n->n_childs-1];
         if(last->id=="NL") {
-            free(last);
+            free(last); // NL has no text or children
             n->n_childs--;
         }
         last = NULL;
@@ -124,7 +126,7 @@ void node_fixup_tree(Node *n) {
                 } else {
                     last->text = strmerge(last->text,child->text);
                 }
-                free(child);
+                free(child); // we took childs text and it has no children
                 n->children[i] = NULL;
             } else {
                 node_fixup_tree(child);
@@ -184,6 +186,7 @@ Node * scdoc_parse_file(char *fn, int partial) {
         node_fixup_tree(n);
     }
     fclose(fp);
+    scdoclex_destroy();
     scdoc_current_file = NULL;
     return n;
 }
