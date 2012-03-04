@@ -1,6 +1,10 @@
 #ifndef SCDOC_H
 #define SCDOC_H
 
+#define SCDOC_PARSE_FULL 0
+#define SCDOC_PARSE_PARTIAL 1
+#define SCDOC_PARSE_METADATA 2
+
 typedef struct Node {
     const char * id;
     int n_childs;
@@ -16,7 +20,7 @@ Node * node_add_child(Node *n, Node *child);
 Node * node_create(const char *id);
 void node_free_tree(Node *n);
 
-Node * scdoc_parse_file(char *fn, int partial);
+Node * scdoc_parse_file(char *fn, int mode);
 void node_dump(Node *n);
 
 extern char * scdoc_current_file;

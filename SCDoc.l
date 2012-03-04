@@ -10,10 +10,15 @@ int scdoc_start_token = 0;
 
 %}
 
-%option noyywrap never-interactive nounistd
-%option yylineno
+%option noyywrap never-interactive nounistd yylineno
+
 %x verbatim
 %x verbatim2
+
+%x metadata
+%x eat
+%x eat2
+%x eat3
 
 %%
 
@@ -23,6 +28,7 @@ if (scdoc_start_token) {
     int t = scdoc_start_token;
     scdoc_start_token = 0;
 //    colnum = 1;
+    if(t==START_METADATA) BEGIN(eat);
     return t;
 }
 
@@ -95,11 +101,49 @@ if (scdoc_start_token) {
 [ \r\t]+                scdoclval.str = strdup(" "); return TEXT;
 
 [a-zA-Z]+:\/\/[^ \t\n:,]+       scdoclval.str = strdup(scdoctext); return URL;
+
 [a-zA-Z]+                       |
-<*>[.,!?(){}\[\]'"0-9]+         |
+<INITIAL,verbatim,verbatim2>[.!?(){}\[\]'"0-9]+         |
 <verbatim,verbatim2>[^:\\\t\n ]+ |
 [^:\\\n]                        |
-<*>.                            scdoclval.str = strdup(scdoctext); return TEXT;
+<INITIAL,verbatim,verbatim2>.    scdoclval.str = strdup(scdoctext); return TEXT;
 
+<metadata,eat>(?i:[ \t]*class::[ \t]*)         BEGIN(metadata); return CLASS;
+<metadata,eat>(?i:[ \t]*title::[ \t]*)         BEGIN(metadata); return TITLE;
+<metadata,eat>(?i:[ \t]*summary::[ \t]*)       BEGIN(metadata); return SUMMARY;
+<metadata,eat>(?i:[ \t]*related::[ \t]*)       BEGIN(metadata); return RELATED;
+<metadata,eat>(?i:[ \t]*categories::[ \t]*)    BEGIN(metadata); return CATEGORIES;
+<metadata,eat>(?i:[ \t]*redirect::[ \t]*)      BEGIN(metadata); return REDIRECT;
+<metadata,eat>(?i:[ \t]*classtree::[ \t]*)     BEGIN(metadata); return CLASSTREE;
+<metadata,eat>(?i:[ \t]*keyword::[ \t]*)       BEGIN(metadata); return KEYWORD;
+<metadata,eat>(?i:[ \t]*private::[ \t]*)       BEGIN(metadata); return PRIVATE;
+<metadata,eat>(?i:[ \t]*section::[ \t]*)       BEGIN(metadata); return SECTION;
+<metadata,eat>(?i:[ \t]*copymethod::[ \t]*)    BEGIN(metadata); return COPYMETHOD;
+<metadata,eat>(?i:[ \t]*method::[ \t]*)        BEGIN(metadata); return METHOD;
+<metadata,eat>(?i:[ \t]*description::[ \t\n]*)   BEGIN(eat); return DESCRIPTION;
+<metadata,eat>(?i:[ \t]*classmethods::[ \t\n]*)  BEGIN(eat); return CLASSMETHODS;
+<metadata,eat>(?i:[ \t]*instancemethods::[ \t\n]*) BEGIN(eat); return INSTANCEMETHODS;
+<metadata,eat>(?i:[ \t]*examples::[ \t\n]*)      BEGIN(eat); return EXAMPLES;
+<metadata>\n    BEGIN(eat); return NEWLINE;
+<metadata>[ \t]*,[ \t]*           scdoclval.str = strdup(scdoctext); return COMMA;
+<metadata>[a-zA-Z]+ |
+<metadata>[0-9]+    |
+<metadata>[^:\n,]+     |
+<metadata>.         scdoclval.str = strdup(scdoctext); return TEXT;
+<eat>(?i:link::[ \t]*)           BEGIN(eat2);
+<eat>(?i:anchor::[ \t]*)         BEGIN(eat2);
+<eat>(?i:image::[ \t]*)          BEGIN(eat2);
+<eat>(?i:soft::[ \t\n]*)         BEGIN(eat2);
+<eat>(?i:strong::[ \t\n]*)       BEGIN(eat2);
+<eat>(?i:emphasis::[ \t\n]*)     BEGIN(eat2);
+<eat>(?i:code::[ \t]*)           BEGIN(eat2);
+<eat>(?i:teletype::[ \t]*)       BEGIN(eat2);
+<eat>(?i:math::[ \t]*)           BEGIN(eat2);
+<eat>(?i:[ \t]*code::[ \t]*\n+)      BEGIN(eat3);
+<eat>(?i:[ \t]*teletype::[ \t]*\n+)  BEGIN(eat3);
+<eat>(?i:[ \t]*math::[ \t]*\n+)      BEGIN(eat3);
+<eat2>[ \t\n]*::            BEGIN(eat);
+<eat3>\n[ \t\n]*::         BEGIN(eat);
+<eat,eat2,eat3>.|\n          /* empty */
 %%
 

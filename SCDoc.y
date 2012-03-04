@@ -14,6 +14,8 @@ extern char *scdoctext;
 extern int scdoc_start_token;
 //extern struct YYLTYPE scdoclloc;
 
+//int scdoc_metadata_mode;
+
 static const char * method_type = NULL;
 
 static Node * topnode;
@@ -58,7 +60,7 @@ void scdocerror(const char *str);
 %type <node> prose proseelem blockA blockB commalist
 %type <node> deflistbody deflistrow defterms
 
-%token START_FULL START_PARTIAL
+%token START_FULL START_PARTIAL START_METADATA
 
 %start start
 
@@ -85,6 +87,12 @@ document: START_FULL dochead optsections
        | START_PARTIAL sections
     {
         $$ = node_make_take_children("BODY",NULL,$2);
+    }
+       | START_METADATA dochead optsections
+    {
+        $$ = node_create("DOCUMENT");
+        node_add_child($$, $2);
+        node_add_child($$, $3);
     }
 ;
 
@@ -315,8 +323,20 @@ commalist: commalist COMMA nocommawords { free($2); $$ = node_add_child($1,node_
 
 %%
 
-Node * scdoc_parse_run(int partial) {
-    scdoc_start_token = partial? START_PARTIAL : START_FULL;
+Node * scdoc_parse_run(int mode) {
+    int modes[] = {START_FULL, START_PARTIAL, START_METADATA};
+    if(mode<0 || mode>=sizeof(modes)) {
+        fprintf(stderr,"scdoc_parse_run(): unknown mode: %d\n",mode);
+    }
+    scdoc_start_token = modes[mode];
+/*    scdoc_start_token = START_FULL;
+    scdoc_metadata_mode = 0;
+    if(mode==SCDOC_PARSE_PARTIAL) {
+        scdoc_start_token = START_PARTIAL;
+    } else
+    if(mode==SCDOC_PARSE_METADATA) {
+        scdoc_metadata_mode = 1;
+    }*/
     topnode = NULL;
     method_type = "METHOD";
     if(scdocparse()!=0) {

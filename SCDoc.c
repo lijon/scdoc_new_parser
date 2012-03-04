@@ -170,7 +170,7 @@ void node_dump(Node *n) {
     _node_dump(n,0,1);
 }
 
-Node * scdoc_parse_file(char *fn, int partial) {
+Node * scdoc_parse_file(char *fn, int mode) {
     FILE *fp;
     Node *n;
 
@@ -181,7 +181,7 @@ Node * scdoc_parse_file(char *fn, int partial) {
     }
     scdoc_current_file = fn;
     scdocrestart(fp);
-    n = scdoc_parse_run(partial);
+    n = scdoc_parse_run(mode);
     if(n) {
         node_fixup_tree(n);
     }
