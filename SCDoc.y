@@ -18,7 +18,7 @@ extern int scdoc_start_token;
 
 static const char * method_type = NULL;
 
-static Node * topnode;
+static DocNode * topnode;
 
 void scdocerror(const char *str);
 
@@ -29,7 +29,7 @@ void scdocerror(const char *str);
     int i;
     const char *id;
     char *str;
-    Node *node;
+    DocNode *doc_node;
 }
 // single line header tags that take text
 %token CLASS TITLE SUMMARY RELATED CATEGORIES REDIRECT
@@ -52,19 +52,19 @@ void scdocerror(const char *str);
 
 %type <id> headtag sectiontag listtag rangetag inlinetag blocktag
 %type <str> anyword words anywordnl wordsnl anywordurl words2 nocommawords
-%type <node> document arg optreturns optdiscussion body bodyelem
-%type <node> optsubsections optsubsubsections methodbody
-%type <node> dochead headline optsections sections section
-%type <node> subsections subsection subsubsection subsubsections
-%type <node> optbody optargs args listbody tablebody tablecells tablerow
-%type <node> prose proseelem blockA blockB commalist
-%type <node> deflistbody deflistrow defterms
+%type <doc_node> document arg optreturns optdiscussion body bodyelem
+%type <doc_node> optsubsections optsubsubsections methodbody
+%type <doc_node> dochead headline optsections sections section
+%type <doc_node> subsections subsection subsubsection subsubsections
+%type <doc_node> optbody optargs args listbody tablebody tablecells tablerow
+%type <doc_node> prose proseelem blockA blockB commalist
+%type <doc_node> deflistbody deflistrow defterms
 
 %token START_FULL START_PARTIAL START_METADATA
 
 %start start
 
-%destructor { printf("destructing Node %s\n",$$->id); node_free_tree($$); } <node>
+%destructor { printf("destructing DocNode %s\n",$$->id); doc_node_free_tree($$); } <doc_node>
 %destructor { printf("destructing String '%s'\n",$$); free($$); } <str>
 
 %{
@@ -75,34 +75,34 @@ int scdoclex (void);
 %%
 
 start: document { topnode = $1; }
-     | document error { topnode = NULL; node_free_tree($1); }
+     | document error { topnode = NULL; doc_node_free_tree($1); }
      ;
 
 document: START_FULL dochead optsections
     {
-        $$ = node_create("DOCUMENT");
-        node_add_child($$, $2);
-        node_add_child($$, $3);
+        $$ = doc_node_create("DOCUMENT");
+        doc_node_add_child($$, $2);
+        doc_node_add_child($$, $3);
     }
        | START_PARTIAL sections
     {
-        $$ = node_make_take_children("BODY",NULL,$2);
+        $$ = doc_node_make_take_children("BODY",NULL,$2);
     }
        | START_METADATA dochead optsections
     {
-        $$ = node_create("DOCUMENT");
-        node_add_child($$, $2);
-        node_add_child($$, $3);
+        $$ = doc_node_create("DOCUMENT");
+        doc_node_add_child($$, $2);
+        doc_node_add_child($$, $3);
     }
 ;
 
-dochead: dochead headline { $$ = node_add_child($1,$2); }
-       | headline { $$ = node_make("HEADER",NULL,$1); }
+dochead: dochead headline { $$ = doc_node_add_child($1,$2); }
+       | headline { $$ = doc_node_make("HEADER",NULL,$1); }
 ;
 
-headline: headtag words2 eol { $$ = node_make($1,$2,NULL); }
-        | CATEGORIES commalist eol { $$ = node_make_take_children("CATEGORIES",NULL,$2); }
-        | RELATED commalist eol { $$ = node_make_take_children("RELATED",NULL,$2); }
+headline: headtag words2 eol { $$ = doc_node_make($1,$2,NULL); }
+        | CATEGORIES commalist eol { $$ = doc_node_make_take_children("CATEGORIES",NULL,$2); }
+        | RELATED commalist eol { $$ = doc_node_make_take_children("RELATED",NULL,$2); }
 ;
 
 headtag: CLASS { $$ = "CLASS"; }
@@ -121,47 +121,47 @@ optsections: sections
            | { $$ = NULL; }
 ;
 
-sections: sections section { $$ = node_add_child($1,$2); }
-        | section { $$ = node_make("BODY",NULL,$1); }
-        | subsubsections { $$ = node_make_take_children("BODY",NULL,$1); } /* allow text before first section */
+sections: sections section { $$ = doc_node_add_child($1,$2); }
+        | section { $$ = doc_node_make("BODY",NULL,$1); }
+        | subsubsections { $$ = doc_node_make_take_children("BODY",NULL,$1); } /* allow text before first section */
 ;
 
-section: SECTION { method_type = "METHOD"; } words2 eol optsubsections { $$ = node_make_take_children("SECTION",$3,$5); }
-       | sectiontag optsubsections { $$ = node_make_take_children($1, NULL,$2); }
+section: SECTION { method_type = "METHOD"; } words2 eol optsubsections { $$ = doc_node_make_take_children("SECTION",$3,$5); }
+       | sectiontag optsubsections { $$ = doc_node_make_take_children($1, NULL,$2); }
 ;
 
 optsubsections: subsections
               | { $$ = NULL; }
 ;
 
-subsections: subsections subsection { $$ = node_add_child($1,$2); }
-           | subsection { $$ = node_make("(SUBSECTIONS)",NULL,$1); }
+subsections: subsections subsection { $$ = doc_node_add_child($1,$2); }
+           | subsection { $$ = doc_node_make("(SUBSECTIONS)",NULL,$1); }
            | subsubsections
 ;
 
-subsection: SUBSECTION words2 eol optsubsubsections { $$ = node_make_take_children("SUBSECTION", $2, $4); }
+subsection: SUBSECTION words2 eol optsubsubsections { $$ = doc_node_make_take_children("SUBSECTION", $2, $4); }
 ;
 
 optsubsubsections: subsubsections
                  | { $$ = NULL; }
 ;
 
-subsubsections: subsubsections subsubsection { $$ = node_add_child($1,$2); }
-              | subsubsection { $$ = node_make("(SUBSUBSECTIONS)",NULL,$1); }
-              | body { $$ = node_make_take_children("(SUBSUBSECTIONS)",NULL,$1); }
+subsubsections: subsubsections subsubsection { $$ = doc_node_add_child($1,$2); }
+              | subsubsection { $$ = doc_node_make("(SUBSUBSECTIONS)",NULL,$1); }
+              | body { $$ = doc_node_make_take_children("(SUBSUBSECTIONS)",NULL,$1); }
 ; 
 
-subsubsection: METHOD words eol methodbody { $$ = node_make_take_children(method_type,$2,$4); }
-             | COPYMETHOD words eol { $$ = node_make("COPYMETHOD",$2,NULL); }
-             | PRIVATE commalist eol { $$ = node_make_take_children("PRIVATE",NULL,$2); }
+subsubsection: METHOD words eol methodbody { $$ = doc_node_make_take_children(method_type,$2,$4); }
+             | COPYMETHOD words eol { $$ = doc_node_make("COPYMETHOD",$2,NULL); }
+             | PRIVATE commalist eol { $$ = doc_node_make_take_children("PRIVATE",NULL,$2); }
 ;
 
 methodbody: optbody optargs optreturns optdiscussion
     {
-        $$ = node_make_take_children("(METHODBODY)",NULL,$1);
-        node_add_child($$, $2);
-        node_add_child($$, $3);
-        node_add_child($$, $4);
+        $$ = doc_node_make_take_children("(METHODBODY)",NULL,$1);
+        doc_node_add_child($$, $2);
+        doc_node_add_child($$, $3);
+        doc_node_add_child($$, $4);
     }
 ;
 
@@ -173,19 +173,19 @@ optargs: args
        | { $$ = NULL; }
 ;
 
-args: args arg { $$ = node_add_child($1,$2); }
-    | arg { $$ = node_make("ARGUMENTS",NULL,$1); }
+args: args arg { $$ = doc_node_add_child($1,$2); }
+    | arg { $$ = doc_node_make("ARGUMENTS",NULL,$1); }
 ;
 
-arg: ARGUMENT words eol optbody { $$ = node_make_take_children("ARGUMENT", $2, $4); }
-   | ARGUMENT eol body { $$ = node_make_take_children("ARGUMENT", NULL, $3); }
+arg: ARGUMENT words eol optbody { $$ = doc_node_make_take_children("ARGUMENT", $2, $4); }
+   | ARGUMENT eol body { $$ = doc_node_make_take_children("ARGUMENT", NULL, $3); }
 ;
 
-optreturns: RETURNS body { $$ = node_make_take_children("RETURNS",NULL,$2); }
+optreturns: RETURNS body { $$ = doc_node_make_take_children("RETURNS",NULL,$2); }
           | { $$ = NULL; }
 ;
 
-optdiscussion: DISCUSSION body { $$ = node_make_take_children("DISCUSSION",NULL,$2); }
+optdiscussion: DISCUSSION body { $$ = doc_node_make_take_children("DISCUSSION",NULL,$2); }
              | { $$ = NULL; }
 ;
 
@@ -198,35 +198,35 @@ body: blockA
     | blockB
     ;
 
-blockA: blockB bodyelem { $$ = node_add_child($1,$2); }
-      | blockA bodyelem { $$ = node_add_child($1,$2); }
-      | bodyelem { $$ = node_make("(SECTIONBODY)",NULL,$1); }
+blockA: blockB bodyelem { $$ = doc_node_add_child($1,$2); }
+      | blockA bodyelem { $$ = doc_node_add_child($1,$2); }
+      | bodyelem { $$ = doc_node_make("(SECTIONBODY)",NULL,$1); }
       ;
 
-blockB: blockA prose { $$ = node_add_child($1,$2); }
-      | prose { $$ = node_make("(SECTIONBODY)",NULL,$1); }
+blockB: blockA prose { $$ = doc_node_add_child($1,$2); }
+      | prose { $$ = doc_node_make("(SECTIONBODY)",NULL,$1); }
       ;
 
-bodyelem: rangetag body TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
-        | listtag listbody TAGSYM { $$ = node_make_take_children($1,NULL,$2); }
-        | TABLE tablebody TAGSYM { $$ = node_make_take_children("TABLE",NULL,$2); }
-        | DEFINITIONLIST deflistbody TAGSYM { $$ = node_make_take_children("DEFINITIONLIST",NULL,$2); }
-        | blocktag wordsnl TAGSYM { $$ = node_make($1,$2,NULL); }
-        | CLASSTREE words eol { $$ = node_make("CLASSTREE",$2,NULL); }
-        | KEYWORD commalist eol { $$ = node_make_take_children("KEYWORD",NULL,$2); }
+bodyelem: rangetag body TAGSYM { $$ = doc_node_make_take_children($1,NULL,$2); }
+        | listtag listbody TAGSYM { $$ = doc_node_make_take_children($1,NULL,$2); }
+        | TABLE tablebody TAGSYM { $$ = doc_node_make_take_children("TABLE",NULL,$2); }
+        | DEFINITIONLIST deflistbody TAGSYM { $$ = doc_node_make_take_children("DEFINITIONLIST",NULL,$2); }
+        | blocktag wordsnl TAGSYM { $$ = doc_node_make($1,$2,NULL); }
+        | CLASSTREE words eol { $$ = doc_node_make("CLASSTREE",$2,NULL); }
+        | KEYWORD commalist eol { $$ = doc_node_make_take_children("KEYWORD",NULL,$2); }
         | EMPTYLINES { $$ = NULL; }
-        | IMAGE words2 TAGSYM { $$ = node_make("IMAGE",$2,NULL); }
+        | IMAGE words2 TAGSYM { $$ = doc_node_make("IMAGE",$2,NULL); }
         ;
 
-prose: prose proseelem { $$ = node_add_child($1, $2); }
-     | proseelem { $$ = node_make("PROSE",NULL,$1); }
+prose: prose proseelem { $$ = doc_node_add_child($1, $2); }
+     | proseelem { $$ = doc_node_make("PROSE",NULL,$1); }
      ;
 
-proseelem: anyword { $$ = node_make("TEXT",$1,NULL); } // one TEXT for each word
-         | URL { $$ = node_make("LINK",$1,NULL); }
-         | inlinetag words TAGSYM { $$ = node_make($1,$2,NULL); }
-         | FOOTNOTE body TAGSYM { $$ = node_make_take_children("FOOTNOTE",NULL,$2); }
-         | NEWLINE { $$ = node_create("NL"); }
+proseelem: anyword { $$ = doc_node_make("TEXT",$1,NULL); } // one TEXT for each word
+         | URL { $$ = doc_node_make("LINK",$1,NULL); }
+         | inlinetag words TAGSYM { $$ = doc_node_make($1,$2,NULL); }
+         | FOOTNOTE body TAGSYM { $$ = doc_node_make_take_children("FOOTNOTE",NULL,$2); }
+         | NEWLINE { $$ = doc_node_create("NL"); }
          ;
 
 inlinetag: LINK { $$ = "LINK"; }
@@ -253,34 +253,34 @@ rangetag: WARNING { $$ = "WARNING"; }
         | NOTE { $$ = "NOTE"; }
 ;
 
-listbody: listbody HASHES body { $$ = node_add_child($1, node_make_take_children("ITEM",NULL,$3)); }
-        | HASHES body { $$ = node_make("(LISTBODY)",NULL, node_make_take_children("ITEM",NULL,$2)); }
+listbody: listbody HASHES body { $$ = doc_node_add_child($1, doc_node_make_take_children("ITEM",NULL,$3)); }
+        | HASHES body { $$ = doc_node_make("(LISTBODY)",NULL, doc_node_make_take_children("ITEM",NULL,$2)); }
 ;
 
-tablerow: HASHES tablecells { $$ = node_make_take_children("TABROW",NULL,$2); }
+tablerow: HASHES tablecells { $$ = doc_node_make_take_children("TABROW",NULL,$2); }
 ;
 
-tablebody: tablebody tablerow { $$ = node_add_child($1,$2); }
-         | tablerow { $$ = node_make("(TABLEBODY)",NULL,$1); }
+tablebody: tablebody tablerow { $$ = doc_node_add_child($1,$2); }
+         | tablerow { $$ = doc_node_make("(TABLEBODY)",NULL,$1); }
 ;
 
-tablecells: tablecells BARS optbody { $$ = node_add_child($1, node_make_take_children("TABCOL",NULL,$3)); }
-          | optbody { $$ = node_make("(TABLECELLS)",NULL, node_make_take_children("TABCOL",NULL,$1)); }
+tablecells: tablecells BARS optbody { $$ = doc_node_add_child($1, doc_node_make_take_children("TABCOL",NULL,$3)); }
+          | optbody { $$ = doc_node_make("(TABLECELLS)",NULL, doc_node_make_take_children("TABCOL",NULL,$1)); }
 ;
 
-defterms: defterms HASHES body { $$ = node_add_child($1,node_make_take_children("TERM",NULL,$3)); }
-        | HASHES body { $$ = node_make("(TERMS)",NULL,node_make_take_children("TERM",NULL,$2)); }
+defterms: defterms HASHES body { $$ = doc_node_add_child($1,doc_node_make_take_children("TERM",NULL,$3)); }
+        | HASHES body { $$ = doc_node_make("(TERMS)",NULL,doc_node_make_take_children("TERM",NULL,$2)); }
 ;
 
 deflistrow: defterms BARS optbody
     {
-        $$ = node_make_take_children("DEFLISTITEM", NULL, $1);
-        node_add_child($$, node_make_take_children("DEFINITION", NULL, $3));
+        $$ = doc_node_make_take_children("DEFLISTITEM", NULL, $1);
+        doc_node_add_child($$, doc_node_make_take_children("DEFINITION", NULL, $3));
     }
 ;
 
-deflistbody: deflistbody deflistrow { $$ = node_add_child($1,$2); }
-           | deflistrow { $$ = node_make("(DEFLISTBODY)",NULL,$1); }
+deflistbody: deflistbody deflistrow { $$ = doc_node_add_child($1,$2); }
+           | deflistrow { $$ = doc_node_make("(DEFLISTBODY)",NULL,$1); }
 ;
 
 anywordurl: anyword
@@ -317,13 +317,13 @@ nocommawords: nocommawords TEXT { $$ = strmerge($1,$2); }
             | URL
 ;
 
-commalist: commalist COMMA nocommawords { free($2); $$ = node_add_child($1,node_make("STRING",$3,NULL)); }
-         | nocommawords { $$ = node_make("(COMMALIST)",NULL,node_make("STRING",$1,NULL)); }
+commalist: commalist COMMA nocommawords { free($2); $$ = doc_node_add_child($1,doc_node_make("STRING",$3,NULL)); }
+         | nocommawords { $$ = doc_node_make("(COMMALIST)",NULL,doc_node_make("STRING",$1,NULL)); }
 ;
 
 %%
 
-Node * scdoc_parse_run(int mode) {
+DocNode * scdoc_parse_run(int mode) {
     int modes[] = {START_FULL, START_PARTIAL, START_METADATA};
     if(mode<0 || mode>=sizeof(modes)) {
         fprintf(stderr,"scdoc_parse_run(): unknown mode: %d\n",mode);

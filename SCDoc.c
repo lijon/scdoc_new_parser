@@ -4,13 +4,13 @@
 #include <ctype.h>
 #include "SCDoc.h"
 
-Node * scdoc_parse_run(int partial);
+DocNode * scdoc_parse_run(int partial);
 void scdocrestart (FILE *input_file);
 int scdoclex_destroy(void);
 
 char * scdoc_current_file = NULL;
 
-static int node_dump_level_done[32] = {0,};
+static int doc_node_dump_level_done[32] = {0,};
 
 // merge a+b and free b
 char *strmerge(char *a, char *b) {
@@ -30,15 +30,8 @@ static char *striptrailingws(char *s) {
     return s;
 }
 
-/*Node * scdoc_parse_string(char *str, int partial) {
-    YY_BUFFER_STATE x = scdoc_scan_string(str);
-    Node *n = scdoc_parse_run(partial);
-    yy_delete_buffer(x);
-    return n;
-}*/
-
-Node * node_create(const char *id) {
-    Node *n = (Node *)malloc(sizeof(Node));
+DocNode * doc_node_create(const char *id) {
+    DocNode *n = (DocNode *)malloc(sizeof(DocNode));
     n->id = id;
     n->text = NULL;
     n->n_childs = 0;
@@ -47,9 +40,9 @@ Node * node_create(const char *id) {
 }
 
 // takes ownership of child
-Node * node_add_child(Node *n, Node *child) {
+DocNode * doc_node_add_child(DocNode *n, DocNode *child) {
     if(child) {
-        n->children = (Node **)realloc(n->children, (n->n_childs+1) * sizeof(Node*));
+        n->children = (DocNode **)realloc(n->children, (n->n_childs+1) * sizeof(DocNode*));
         n->children[n->n_childs] = child;
         n->n_childs++;
     }
@@ -57,7 +50,7 @@ Node * node_add_child(Node *n, Node *child) {
 }
 
 // takes ownership of text
-/*Node * node_add_text(Node *n, char *text) {
+/*DocNode * doc_node_add_text(DocNode *n, char *text) {
     if(n->text) {
         char *str = strmergefree(n->text,text);
         n->text = str;
@@ -68,8 +61,8 @@ Node * node_add_child(Node *n, Node *child) {
     return n;
 }*/
 
-// moves the childs from src node to n
-Node * node_move_children(Node *n, Node *src) {
+// moves the childs from src doc_node to n
+DocNode * doc_node_move_children(DocNode *n, DocNode *src) {
     if(src) {
         free(n->children);
         n->children = src->children;
@@ -81,44 +74,44 @@ Node * node_move_children(Node *n, Node *src) {
     }
 }
 
-Node * node_make(const char *id, char *text, Node *child) {
-    Node *n = node_create(id);
+DocNode * doc_node_make(const char *id, char *text, DocNode *child) {
+    DocNode *n = doc_node_create(id);
     n->text = text;
-    node_add_child(n, child);
+    doc_node_add_child(n, child);
     return n;
 }
 
-Node * node_make_take_children(const char *id, char *text, Node *src) {
-    Node *n = node_make(id, text, NULL);
-    node_move_children(n, src);
+DocNode * doc_node_make_take_children(const char *id, char *text, DocNode *src) {
+    DocNode *n = doc_node_make(id, text, NULL);
+    doc_node_move_children(n, src);
     return n;
 }
 
-void node_free_tree(Node *n) {
+void doc_node_free_tree(DocNode *n) {
     int i;
 //    printf("freeing %s\n",n->id);
     free(n->text);
     for(i=0;i<n->n_childs;i++) {
-        node_free_tree(n->children[i]);
+        doc_node_free_tree(n->children[i]);
     }
     free(n->children);
     free(n);
 }
 
-void node_fixup_tree(Node *n) {
+void doc_node_fixup_tree(DocNode *n) {
     int i;
     if(n->text) {
         n->text = striptrailingws(n->text);
     }
     if(n->n_childs) {
-        Node *last = n->children[n->n_childs-1];
+        DocNode *last = n->children[n->n_childs-1];
         if(last->id=="NL") {
             free(last); // NL has no text or children
             n->n_childs--;
         }
         last = NULL;
         for(i = 0; i < n->n_childs; i++) {
-            Node *child = n->children[i];
+            DocNode *child = n->children[i];
             if((child->id=="TEXT" || child->id=="NL") && last && last->id=="TEXT") {
                 if(child->id=="NL") {
                     last->text = (char*)realloc(last->text,strlen(last->text)+2);
@@ -129,7 +122,7 @@ void node_fixup_tree(Node *n) {
                 free(child); // we took childs text and it has no children
                 n->children[i] = NULL;
             } else {
-                node_fixup_tree(child);
+                doc_node_fixup_tree(child);
                 last = child;
             }
         }
@@ -143,17 +136,17 @@ void node_fixup_tree(Node *n) {
     }
 }
 
-static void _node_dump(Node *n, int level, int last) {
+static void _doc_node_dump(DocNode *n, int level, int last) {
     int i;
     for(i=0;i<level;i++) {
-        if(node_dump_level_done[i])
+        if(doc_node_dump_level_done[i])
             printf("    ");
         else
             printf("|   ");
     }
     if(last) {
         printf("`-- ");
-        node_dump_level_done[level] = 1;
+        doc_node_dump_level_done[level] = 1;
     } else {
         printf("|-- ");
     }
@@ -161,18 +154,18 @@ static void _node_dump(Node *n, int level, int last) {
     if(n->text) printf(" \"%s\"",n->text);
     printf("\n");
     for(i = 0; i < n->n_childs; i++) {
-        _node_dump(n->children[i], level+1, i==n->n_childs-1);
+        _doc_node_dump(n->children[i], level+1, i==n->n_childs-1);
     }
-    node_dump_level_done[level] = 0;
+    doc_node_dump_level_done[level] = 0;
 }
 
-void node_dump(Node *n) {
-    _node_dump(n,0,1);
+void doc_node_dump(DocNode *n) {
+    _doc_node_dump(n,0,1);
 }
 
-Node * scdoc_parse_file(char *fn, int mode) {
+DocNode * scdoc_parse_file(char *fn, int mode) {
     FILE *fp;
-    Node *n;
+    DocNode *n;
 
     fp = fopen(fn,"r");
     if(!fp) {
@@ -183,7 +176,7 @@ Node * scdoc_parse_file(char *fn, int mode) {
     scdocrestart(fp);
     n = scdoc_parse_run(mode);
     if(n) {
-        node_fixup_tree(n);
+        doc_node_fixup_tree(n);
     }
     fclose(fp);
     scdoclex_destroy();
