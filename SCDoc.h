@@ -6,9 +6,9 @@
 #define SCDOC_PARSE_METADATA 2
 
 typedef struct DocNode {
-    const char * id;
-    int n_childs;
+    const char *id;
     char *text;
+    int n_childs;
     struct DocNode **children;
 } DocNode;
 

@@ -151,14 +151,19 @@ subsubsections: subsubsections subsubsection { $$ = doc_node_add_child($1,$2); }
               | body { $$ = doc_node_make_take_children("(SUBSUBSECTIONS)",NULL,$1); }
 ; 
 
-subsubsection: METHOD words eol methodbody { $$ = doc_node_make_take_children(method_type,$2,$4); }
+subsubsection: METHOD commalist eol methodbody
+    {
+        $2->id = "METHODNAMES";
+        $$ = doc_node_make(method_type,NULL,$2);
+        doc_node_add_child($$, $4);
+    }
              | COPYMETHOD words eol { $$ = doc_node_make("COPYMETHOD",$2,NULL); }
              | PRIVATE commalist eol { $$ = doc_node_make_take_children("PRIVATE",NULL,$2); }
 ;
 
 methodbody: optbody optargs optreturns optdiscussion
     {
-        $$ = doc_node_make_take_children("(METHODBODY)",NULL,$1);
+        $$ = doc_node_make_take_children("METHODBODY",NULL,$1);
         doc_node_add_child($$, $2);
         doc_node_add_child($$, $3);
         doc_node_add_child($$, $4);
