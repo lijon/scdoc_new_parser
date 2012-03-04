@@ -118,6 +118,7 @@ if (scdoc_start_token) {
 <metadata,eat>(?i:[ \t]*keyword::[ \t]*)       BEGIN(metadata); return KEYWORD;
 <metadata,eat>(?i:[ \t]*private::[ \t]*)       BEGIN(metadata); return PRIVATE;
 <metadata,eat>(?i:[ \t]*section::[ \t]*)       BEGIN(metadata); return SECTION;
+<metadata,eat>(?i:[ \t]*subsection::[ \t]*)    BEGIN(metadata); return SUBSECTION;
 <metadata,eat>(?i:[ \t]*copymethod::[ \t]*)    BEGIN(metadata); return COPYMETHOD;
 <metadata,eat>(?i:[ \t]*method::[ \t]*)        BEGIN(metadata); return METHOD;
 <metadata,eat>(?i:[ \t]*description::[ \t\n]*)   BEGIN(eat); return DESCRIPTION;
