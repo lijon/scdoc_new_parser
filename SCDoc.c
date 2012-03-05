@@ -89,7 +89,7 @@ DocNode * doc_node_make_take_children(const char *id, char *text, DocNode *src) 
 
 void doc_node_free_tree(DocNode *n) {
     int i;
-//    printf("freeing %s\n",n->id);
+    if(!n) return;
     free(n->text);
     for(i=0;i<n->n_childs;i++) {
         doc_node_free_tree(n->children[i]);

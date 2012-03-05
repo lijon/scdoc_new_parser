@@ -20,6 +20,8 @@ int scdoc_start_token = 0;
 %x eat2
 %x eat3
 
+%x method
+
 %%
 
 %{
@@ -48,7 +50,7 @@ if (scdoc_start_token) {
 (?i:[ \t]*section::[ \t]*)       return SECTION;
 (?i:[ \t]*subsection::[ \t]*)    return SUBSECTION;
 (?i:[ \t]*copymethod::[ \t]*)    return COPYMETHOD;
-(?i:[ \t]*method::[ \t]*)        return METHOD;
+(?i:[ \t]*method::[ \t]*)        BEGIN(method); return METHOD;
 (?i:[ \t]*argument::[ \t]*)      return ARGUMENT;
 
 (?i:[ \t]*description::[ \t\n]*)   return DESCRIPTION;
@@ -92,7 +94,7 @@ if (scdoc_start_token) {
 \n              return NEWLINE;
 \n([ \t]*\n)+           return EMPTYLINES;
 
-[ \t]*,[ \t]*           scdoclval.str = strdup(scdoctext); return COMMA;
+<INITIAL,method>[ \t]*,[ \t]*           scdoclval.str = strdup(scdoctext); return COMMA;
 
 \\\|\|                  scdoclval.str = strdup("||"); return TEXT;
 \\\#\#                  scdoclval.str = strdup("##"); return TEXT;
@@ -101,6 +103,11 @@ if (scdoc_start_token) {
 [ \r\t]+                scdoclval.str = strdup(" "); return TEXT;
 
 [a-zA-Z]+:\/\/[^ \t\n:,]+       scdoclval.str = strdup(scdoctext); return URL;
+<method>[a-z][a-zA-Z0-9_]*|[-<>@|&%*+/!?=]+ scdoclval.str = strdup(scdoctext); return METHODNAME;
+<method>\([^()]+\)              scdoclval.str = strdup(scdoctext); return METHODARGS;
+<method>[ \r\t]+                /* eat this */
+<method>\n                      BEGIN(INITIAL); return NEWLINE;
+<method>.                       return BAD_METHODNAME;
 
 [a-zA-Z]+                       |
 <INITIAL,verbatim,verbatim2>[.!?(){}\[\]'"0-9]+         |

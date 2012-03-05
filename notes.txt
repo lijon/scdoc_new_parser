@@ -1,3 +1,5 @@
+- check that argnames match with reality? (in renderer)
+
 - should we deprecate class:: and just use title::?
   or do we need a way to mark the actual doc that it's a class ref and not a normal doc?
   we could use only title:: but add an isClass boolean to the SCDocument struct,

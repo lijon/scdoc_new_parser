@@ -36,7 +36,7 @@ list::
 ## 1
 ::
 
-method:: auxMethod
+method:: auxMethod, auxBazoo(1,2,3)
 hej
 
 CLASSMETHODS::
@@ -58,7 +58,7 @@ blah blah...
 private:: prInit, hiddenMethod
 copymethod:: Classes/SinOsc *ar
 
-method:: zoo
+method:: zoo, asdf
 another method
 returns::
 An instance

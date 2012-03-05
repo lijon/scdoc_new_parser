@@ -47,8 +47,9 @@ void scdocerror(const char *str);
 // symbols
 %token TAGSYM BARS HASHES
 // text and whitespace
-%token <str> TEXT URL COMMA
+%token <str> TEXT URL COMMA METHODNAME METHODARGS
 %token NEWLINE EMPTYLINES
+%token BAD_METHODNAME
 
 %type <id> headtag sectiontag listtag rangetag inlinetag blocktag
 %type <str> anyword words anywordnl wordsnl anywordurl words2 nocommawords
@@ -58,13 +59,13 @@ void scdocerror(const char *str);
 %type <doc_node> subsections subsection subsubsection subsubsections
 %type <doc_node> optbody optargs args listbody tablebody tablecells tablerow
 %type <doc_node> prose proseelem blockA blockB commalist
-%type <doc_node> deflistbody deflistrow defterms
+%type <doc_node> deflistbody deflistrow defterms methnames optMETHODARGS
 
 %token START_FULL START_PARTIAL START_METADATA
 
 %start start
 
-%destructor { printf("destructing DocNode %s\n",$$->id); doc_node_free_tree($$); } <doc_node>
+%destructor { printf("destructing DocNode %s\n",$$?$$->id:NULL); doc_node_free_tree($$); } <doc_node>
 %destructor { printf("destructing String '%s'\n",$$); free($$); } <str>
 
 %{
@@ -151,14 +152,30 @@ subsubsections: subsubsections subsubsection { $$ = doc_node_add_child($1,$2); }
               | body { $$ = doc_node_make_take_children("(SUBSUBSECTIONS)",NULL,$1); }
 ; 
 
-subsubsection: METHOD commalist eol methodbody
+subsubsection: METHOD methnames optMETHODARGS eol methodbody
     {
         $2->id = "METHODNAMES";
         $$ = doc_node_make(method_type,NULL,$2);
-        doc_node_add_child($$, $4);
+        doc_node_add_child($$, $5);
+        doc_node_add_child($2, $3);
     }
              | COPYMETHOD words eol { $$ = doc_node_make("COPYMETHOD",$2,NULL); }
              | PRIVATE commalist eol { $$ = doc_node_make_take_children("PRIVATE",NULL,$2); }
+;
+
+optMETHODARGS: { $$ = NULL; }
+             | METHODARGS
+    {
+        $$ = doc_node_make("ARGSTRING",$1,NULL);
+        if(method_type!="METHOD") {
+            yyerror("METHOD argument string is not allowed inside CLASSMETHODS or INSTANCEMETHODS");
+            YYERROR;
+        }
+    }
+;
+
+methnames: methnames COMMA METHODNAME { free($2); $2 = NULL; $$ = doc_node_add_child($1, doc_node_make("STRING",$3,NULL)); }
+         | METHODNAME { $$ = doc_node_make("(METHODNAMES)",NULL,doc_node_make("STRING",$1,NULL)); }
 ;
 
 methodbody: optbody optargs optreturns optdiscussion
@@ -322,7 +339,7 @@ nocommawords: nocommawords TEXT { $$ = strmerge($1,$2); }
             | URL
 ;
 
-commalist: commalist COMMA nocommawords { free($2); $$ = doc_node_add_child($1,doc_node_make("STRING",$3,NULL)); }
+commalist: commalist COMMA nocommawords { free($2); $2=NULL; $$ = doc_node_add_child($1,doc_node_make("STRING",$3,NULL)); }
          | nocommawords { $$ = doc_node_make("(COMMALIST)",NULL,doc_node_make("STRING",$1,NULL)); }
 ;
 
