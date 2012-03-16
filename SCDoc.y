@@ -12,6 +12,7 @@ int scdocparse();
 extern int scdoclineno;
 extern char *scdoctext;
 extern int scdoc_start_token;
+extern FILE *scdocin;
 //extern struct YYLTYPE scdoclloc;
 
 //int scdoc_metadata_mode;
@@ -369,12 +370,19 @@ DocNode * scdoc_parse_run(int mode) {
 
 void scdocerror(const char *str)
 {
-// FIXME: save current line in buffer so we can display it here?
-//    char *text = strdup(scdoctext);
-//    char *eol = strchr(text, '\n');
-//    if(eol) *eol = '\0';
-//    fprintf(stderr, "In %s:\n  %s\n  At line %d, col %d-%d: '%s'\n\n",scdoc_current_file,str,scdoclineno,scdoclloc.first_column,scdoclloc.last_column,text);
     fprintf(stderr, "In %s:\n  At line %d: %s\n\n",scdoc_current_file,scdoclineno,str);
-//    free(text);
+
+/*  FIXME: this does not work well, since the reported linenumber is often *after* the actual error line
+    fseek(scdocin, 0, SEEK_SET);
+    int line = 1;
+    char buf[256],*txt;
+    while(line!=scdoclineno && !feof(scdocin)) {
+        int c = fgetc(scdocin);
+        if(c=='\n') line++;
+    }
+    txt = fgets(buf, 256, scdocin);
+    if(txt)
+        fprintf(stderr,"  %s\n-------------------\n", txt);
+*/
 }
 

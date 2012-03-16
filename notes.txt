@@ -8,12 +8,20 @@
 
 - replace node->children with a linked list (node->next and node->tail)
   instead of realloc'ing? same for text strings instead of using strmerge?
+  or realloc in blocks?
 
 - private:: now counts as a subsection (like method:: and copymethod::)
   this means it is a section that can't have any text in it, meaning it needs
   to come after any section text.
   an alternative would be to use the syntax: class/instancemethods optprivate subsections
   but that would mean it *must* come right after the class/instancemethods section header.
+
+- deprecate keyword:: and introduce a keywords:: in header only?
+  one could then optionally use anchor::kw_word:: to set kw locations in the doc.
+  the idea is that it would speed up metadata parsing, but I'm not sure it would.
+
+- error lines are not always correct, probably because many tags eat trailing newlines.
+  but if we eat newlines before a tag, it will break EOL termination detection..
 
 - integrate with sclang and make a primitive that returns the document tree
     SCDocument:
