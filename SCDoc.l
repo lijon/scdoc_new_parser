@@ -53,29 +53,29 @@ if (scdoc_start_token) {
 (?i:[ \t]*method::[ \t]*)        BEGIN(method); return METHOD;
 (?i:[ \t]*argument::[ \t]*)      return ARGUMENT;
 
-(?i:[ \t]*description::[ \t\n]*)   return DESCRIPTION;
-(?i:[ \t]*classmethods::[ \t\n]*)  return CLASSMETHODS;
-(?i:[ \t]*instancemethods::[ \t\n]*) return INSTANCEMETHODS;
-(?i:[ \t]*examples::[ \t\n]*)      return EXAMPLES;
+(?i:[ \t]*description::[ \t\n\r]*)   return DESCRIPTION;
+(?i:[ \t]*classmethods::[ \t\n\r]*)  return CLASSMETHODS;
+(?i:[ \t]*instancemethods::[ \t\n\r]*) return INSTANCEMETHODS;
+(?i:[ \t]*examples::[ \t\n\r]*)      return EXAMPLES;
 
-(?i:[ \t]*returns::[ \t\n]*)       return RETURNS;
-(?i:[ \t]*discussion::[ \t\n]*)    return DISCUSSION;
+(?i:[ \t]*returns::[ \t\n\r]*)       return RETURNS;
+(?i:[ \t]*discussion::[ \t\n\r]*)    return DISCUSSION;
 
-(?i:[ \t]*list::[ \t\n]*)          return LIST;
-(?i:[ \t]*tree::[ \t\n]*)          return TREE;
-(?i:[ \t]*numberedlist::[ \t\n]*)  return NUMBEREDLIST;
-(?i:[ \t]*definitionlist::[ \t\n]*) return DEFINITIONLIST;
-(?i:[ \t]*table::[ \t\n]*)         return TABLE;
-(?i:[ \t]*footnote::[ \t\n]*)      return FOOTNOTE;
-(?i:[ \t]*warning::[ \t\n]*)       return WARNING;
-(?i:[ \t]*note::[ \t\n]*)          return NOTE;
+(?i:[ \t]*list::[ \t\n\r]*)          return LIST;
+(?i:[ \t]*tree::[ \t\n\r]*)          return TREE;
+(?i:[ \t]*numberedlist::[ \t\n\r]*)  return NUMBEREDLIST;
+(?i:[ \t]*definitionlist::[ \t\n\r]*) return DEFINITIONLIST;
+(?i:[ \t]*table::[ \t\n\r]*)         return TABLE;
+(?i:[ \t]*footnote::[ \t\n\r]*)      return FOOTNOTE;
+(?i:[ \t]*warning::[ \t\n\r]*)       return WARNING;
+(?i:[ \t]*note::[ \t\n\r]*)          return NOTE;
 
 (?i:link::[ \t]*)           BEGIN(verbatim); return LINK;
 (?i:anchor::[ \t]*)         BEGIN(verbatim); return ANCHOR;
 (?i:image::[ \t]*)          BEGIN(verbatim); return IMAGE;
-(?i:soft::[ \t\n]*)         BEGIN(verbatim); return SOFT;
-(?i:strong::[ \t\n]*)       BEGIN(verbatim); return STRONG;
-(?i:emphasis::[ \t\n]*)     BEGIN(verbatim); return EMPHASIS;
+(?i:soft::[ \t\n\r]*)         BEGIN(verbatim); return SOFT;
+(?i:strong::[ \t\n\r]*)       BEGIN(verbatim); return STRONG;
+(?i:emphasis::[ \t\n\r]*)     BEGIN(verbatim); return EMPHASIS;
 (?i:code::[ \t]*)           BEGIN(verbatim); return CODE;
 (?i:teletype::[ \t]*)       BEGIN(verbatim); return TELETYPE;
 (?i:math::[ \t]*)           BEGIN(verbatim); return MATH;
@@ -84,15 +84,15 @@ if (scdoc_start_token) {
 (?i:[ \t]*teletype::[ \t]*\n+)  BEGIN(verbatim2); return TELETYPEBLOCK;
 (?i:[ \t]*math::[ \t]*\n+)      BEGIN(verbatim2); return MATHBLOCK;
 
-<INITIAL,verbatim>[ \t\n]*::    BEGIN(0); return TAGSYM;
-<verbatim2>\n[ \t\n]*::         BEGIN(0); return TAGSYM;
-[ \t]*\|\|[ \t\n]*              return BARS;
-[ \t]*\#\#[ \t\n]*              return HASHES;
+<INITIAL,verbatim>[ \t\n\r]*::    BEGIN(0); return TAGSYM;
+<verbatim2>\n[ \t\n\r]*::         BEGIN(0); return TAGSYM;
+[ \t]*\|\|[ \t\n\r]*              return BARS;
+[ \t]*\#\#[ \t\n\r]*              return HASHES;
 
 <verbatim2>\n   scdoclval.str = strdup("\n"); return TEXT;
 <verbatim>\n+   scdoclval.str = strdup(" "); return TEXT;
 \n              return NEWLINE;
-\n([ \t]*\n)+           return EMPTYLINES;
+\n([ \t\r]*\n)+           return EMPTYLINES;
 
 <INITIAL,method>[ \t]*,[ \t]*           scdoclval.str = strdup(scdoctext); return COMMA;
 
@@ -100,9 +100,11 @@ if (scdoc_start_token) {
 \\\#\#                  scdoclval.str = strdup("##"); return TEXT;
 <INITIAL,verbatim>\\::  scdoclval.str = strdup("::"); return TEXT;
 <verbatim,verbatim2>\t  scdoclval.str = strdup("    "); return TEXT;
-[ \r\t]+                scdoclval.str = strdup(" "); return TEXT;
+[ \t]+                scdoclval.str = strdup(" "); return TEXT;
 
-[a-zA-Z]+:\/\/[^ \t\n:,]+       scdoclval.str = strdup(scdoctext); return URL;
+<*>\r                   /* eat this */
+
+[a-zA-Z]+:\/\/[^ \t\n\r:,]+       scdoclval.str = strdup(scdoctext); return URL;
 <method>[a-z][a-zA-Z0-9_]*|[-<>@|&%*+/!?=]+ scdoclval.str = strdup(scdoctext); return METHODNAME;
 <method>\([^()]+\)              scdoclval.str = strdup(scdoctext); return METHODARGS;
 <method>[ \r\t]+                /* eat this */
@@ -111,8 +113,8 @@ if (scdoc_start_token) {
 
 [a-zA-Z]+                       |
 <INITIAL,verbatim,verbatim2>[.!?(){}\[\]'"0-9]+         |
-<verbatim,verbatim2>[^:\\\t\n ]+ |
-[^:\\\n]                        |
+<verbatim,verbatim2>[^:\\\t\n\r ]+ |
+[^:\\\n\r]                        |
 <INITIAL,verbatim,verbatim2>.    scdoclval.str = strdup(scdoctext); return TEXT;
 
 <metadata,eat>(?i:[ \t]*class::[ \t]*)         BEGIN(metadata); return CLASS;
@@ -128,30 +130,30 @@ if (scdoc_start_token) {
 <metadata,eat>(?i:[ \t]*subsection::[ \t]*)    BEGIN(metadata); return SUBSECTION;
 <metadata,eat>(?i:[ \t]*copymethod::[ \t]*)    BEGIN(metadata); return COPYMETHOD;
 <metadata,eat>(?i:[ \t]*method::[ \t]*)        BEGIN(metadata); return METHOD;
-<metadata,eat>(?i:[ \t]*description::[ \t\n]*)   BEGIN(eat); return DESCRIPTION;
-<metadata,eat>(?i:[ \t]*classmethods::[ \t\n]*)  BEGIN(eat); return CLASSMETHODS;
-<metadata,eat>(?i:[ \t]*instancemethods::[ \t\n]*) BEGIN(eat); return INSTANCEMETHODS;
-<metadata,eat>(?i:[ \t]*examples::[ \t\n]*)      BEGIN(eat); return EXAMPLES;
+<metadata,eat>(?i:[ \t]*description::[ \t\n\r]*)   BEGIN(eat); return DESCRIPTION;
+<metadata,eat>(?i:[ \t]*classmethods::[ \t\n\r]*)  BEGIN(eat); return CLASSMETHODS;
+<metadata,eat>(?i:[ \t]*instancemethods::[ \t\n\r]*) BEGIN(eat); return INSTANCEMETHODS;
+<metadata,eat>(?i:[ \t]*examples::[ \t\n\r]*)      BEGIN(eat); return EXAMPLES;
 <metadata>\n    BEGIN(eat); return NEWLINE;
 <metadata>[ \t]*,[ \t]*           scdoclval.str = strdup(scdoctext); return COMMA;
 <metadata>[a-zA-Z]+ |
 <metadata>[0-9]+    |
-<metadata>[^:\n,]+     |
+<metadata>[^:\n\r,]+     |
 <metadata>.         scdoclval.str = strdup(scdoctext); return TEXT;
 <eat>(?i:link::[ \t]*)           BEGIN(eat2);
 <eat>(?i:anchor::[ \t]*)         BEGIN(eat2);
 <eat>(?i:image::[ \t]*)          BEGIN(eat2);
-<eat>(?i:soft::[ \t\n]*)         BEGIN(eat2);
-<eat>(?i:strong::[ \t\n]*)       BEGIN(eat2);
-<eat>(?i:emphasis::[ \t\n]*)     BEGIN(eat2);
+<eat>(?i:soft::[ \t\n\r]*)         BEGIN(eat2);
+<eat>(?i:strong::[ \t\n\r]*)       BEGIN(eat2);
+<eat>(?i:emphasis::[ \t\n\r]*)     BEGIN(eat2);
 <eat>(?i:code::[ \t]*)           BEGIN(eat2);
 <eat>(?i:teletype::[ \t]*)       BEGIN(eat2);
 <eat>(?i:math::[ \t]*)           BEGIN(eat2);
 <eat>(?i:[ \t]*code::[ \t]*\n+)      BEGIN(eat3);
 <eat>(?i:[ \t]*teletype::[ \t]*\n+)  BEGIN(eat3);
 <eat>(?i:[ \t]*math::[ \t]*\n+)      BEGIN(eat3);
-<eat2>[ \t\n]*::            BEGIN(eat);
-<eat3>\n[ \t\n]*::         BEGIN(eat);
+<eat2>[ \t\n\r]*::            BEGIN(eat);
+<eat3>\n[ \t\n\r]*::         BEGIN(eat);
 <eat,eat2,eat3>.|\n          /* empty */
 %%
 
