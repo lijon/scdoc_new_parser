@@ -26,6 +26,8 @@ int scdoc_start_token = 0;
 //int colnum;
 //#define YY_USER_ACTION { scdoclloc.first_column = colnum; colnum=colnum+yyleng; scdoclloc.last_column=colnum; if(scdoclloc.first_line!=yylineno) colnum=1; scdoclloc.first_line = scdoclloc.last_line = yylineno;}
 
+static int method_caller;
+
 %}
 
 %option noyywrap never-interactive nounistd yylineno
@@ -68,7 +70,7 @@ if (scdoc_start_token) {
 (?i:[ \t]*section::[ \t]*)       return SECTION;
 (?i:[ \t]*subsection::[ \t]*)    return SUBSECTION;
 (?i:[ \t]*copymethod::[ \t]*)    return COPYMETHOD;
-(?i:[ \t]*method::[ \t]*)        BEGIN(method); return METHOD;
+(?i:[ \t]*method::[ \t]*)        method_caller = YY_START; BEGIN(method); return METHOD;
 (?i:[ \t]*argument::[ \t]*)      return ARGUMENT;
 
 (?i:[ \t]*description::[ \t\n\r]*)   return DESCRIPTION;
@@ -126,7 +128,7 @@ if (scdoc_start_token) {
 <method>[a-z][a-zA-Z0-9_]*|[-<>@|&%*+/!?=]+ scdoclval.str = strdup(scdoctext); return METHODNAME;
 <method>\([^()]+\)              scdoclval.str = strdup(scdoctext); return METHODARGS;
 <method>[ \r\t]+                /* eat this */
-<method>\n                      BEGIN(INITIAL); return NEWLINE;
+<method>\n                      BEGIN(method_caller); return NEWLINE;
 <method>.                       return BAD_METHODNAME;
 
 [a-zA-Z]+                       |
@@ -147,7 +149,7 @@ if (scdoc_start_token) {
 <metadata,eat>(?i:[ \t]*section::[ \t]*)       BEGIN(metadata); return SECTION;
 <metadata,eat>(?i:[ \t]*subsection::[ \t]*)    BEGIN(metadata); return SUBSECTION;
 <metadata,eat>(?i:[ \t]*copymethod::[ \t]*)    BEGIN(metadata); return COPYMETHOD;
-<metadata,eat>(?i:[ \t]*method::[ \t]*)        BEGIN(metadata); return METHOD;
+<metadata,eat>(?i:[ \t]*method::[ \t]*)        method_caller = YY_START; BEGIN(method); return METHOD;
 <metadata,eat>(?i:[ \t]*description::[ \t\n\r]*)   BEGIN(eat); return DESCRIPTION;
 <metadata,eat>(?i:[ \t]*classmethods::[ \t\n\r]*)  BEGIN(eat); return CLASSMETHODS;
 <metadata,eat>(?i:[ \t]*instancemethods::[ \t\n\r]*) BEGIN(eat); return INSTANCEMETHODS;
